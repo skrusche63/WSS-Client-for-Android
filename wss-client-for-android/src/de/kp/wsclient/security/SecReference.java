@@ -20,6 +20,8 @@
 package de.kp.wsclient.security;
 
 import javax.xml.namespace.QName;
+
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 /**
@@ -56,6 +58,10 @@ public class SecReference {
         // Reference URI cannot be null or empty
         if (uri == null || "".equals(uri))throw new Exception("[Invalid Security] Bad reference URI.");
 
+    }
+
+    public SecReference(Document doc) {
+        element = doc.createElementNS(SecConstants.WSSE_NS, "wsse:Reference");
     }
 
     /**

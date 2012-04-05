@@ -13,6 +13,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import de.kp.wsclient.security.SecConstants;
 import de.kp.wsclient.security.SecCredentialInfo;
 import de.kp.wsclient.security.SecSignature;
 import de.kp.wsclient.security.SecValidator;
@@ -44,20 +45,20 @@ public class SOAPMessage {
 	    	xmlDoc = factory.newDocumentBuilder().newDocument();
 	    		    	
 	    	// create SOAP envelope
-	    	String envelopeName = SOAPConstants.SOAP_PRE + ":" + SOAPConstants.SOAP_ENV;
-	    	Element envelope = xmlDoc.createElementNS(SOAPConstants.SOAP_NS, envelopeName);
+	    	String envelopeName = SecConstants.SOAP_PRE + ":" + SecConstants.ELEM_ENVELOPE;
+	    	Element envelope = xmlDoc.createElementNS(SecConstants.URI_SOAP12_ENV, envelopeName);
 	    	
 	    	xmlDoc.appendChild(envelope);
 
 	    	// create SOAP header
-	    	String headerName = SOAPConstants.SOAP_PRE + ":" + SOAPConstants.SOAP_HEADER;
-	    	header = xmlDoc.createElementNS(SOAPConstants.SOAP_NS, headerName);
+	    	String headerName = SecConstants.SOAP_PRE + ":" + SecConstants.ELEM_HEADER;
+	    	header = xmlDoc.createElementNS(SecConstants.URI_SOAP12_ENV, headerName);
 	    	
 	    	envelope.appendChild(header);
 	    	
 	    	// create SOAP body
-	    	String bodyName = SOAPConstants.SOAP_PRE + ":" + SOAPConstants.SOAP_BODY;
-	    	body = xmlDoc.createElementNS(SOAPConstants.SOAP_NS, bodyName);
+	    	String bodyName = SecConstants.SOAP_PRE + ":" + SecConstants.ELEM_BODY;
+	    	body = xmlDoc.createElementNS(SecConstants.URI_SOAP12_ENV, bodyName);
 	    	
 	    	body.setAttribute("id", bodyId);
 	    	
@@ -84,8 +85,8 @@ public class SOAPMessage {
 
 		this.xmlDoc = xmlDoc;
 
-		this.header = getSOAPElement(xmlDoc, SOAPConstants.SOAP_HEADER);		    
-		this.body   = getSOAPElement(xmlDoc, SOAPConstants.SOAP_BODY);
+		this.header = getSOAPElement(xmlDoc, SecConstants.ELEM_HEADER);		    
+		this.body   = getSOAPElement(xmlDoc, SecConstants.ELEM_BODY);
 
 	}
     
@@ -98,8 +99,8 @@ public class SOAPMessage {
 	    
 			this.xmlDoc = factory.newDocumentBuilder().parse(is);
 	    
-			this.header = getSOAPElement(xmlDoc, SOAPConstants.SOAP_HEADER);		    
-			this.body   = getSOAPElement(xmlDoc, SOAPConstants.SOAP_BODY);
+			this.header = getSOAPElement(xmlDoc, SecConstants.ELEM_HEADER);		    
+			this.body   = getSOAPElement(xmlDoc, SecConstants.ELEM_BODY);
 	    
 	   } catch (Exception e) {
 		   e.printStackTrace();
@@ -117,7 +118,7 @@ public class SOAPMessage {
 	
 	private Element getSOAPElement(Document xmlDoc, String localName) {
 
-	    NodeList nodes = xmlDoc.getElementsByTagNameNS(SOAPConstants.SOAP_NS, localName);
+	    NodeList nodes = xmlDoc.getElementsByTagNameNS(SecConstants.URI_SOAP12_ENV, localName);
 	    if (nodes.getLength() == 0) return null;
 
         return (Element) nodes.item(0);

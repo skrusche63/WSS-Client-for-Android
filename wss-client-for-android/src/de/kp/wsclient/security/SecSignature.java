@@ -21,9 +21,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
 
-import de.kp.wsclient.soap.SOAPConstants;
-
-public class SecSignature {
+public class SecSignature extends SecBase {
 
 	private X509Certificate certificate;
 	private PrivateKey privateKey;
@@ -239,7 +237,7 @@ public class SecSignature {
 	
     private Element getSOAPHeader(Document xmlDoc) {
 
-	    NodeList nodes = xmlDoc.getElementsByTagNameNS(SOAPConstants.SOAP_NS, SOAPConstants.SOAP_HEADER);
+	    NodeList nodes = xmlDoc.getElementsByTagNameNS(SecConstants.URI_SOAP12_ENV, SecConstants.ELEM_HEADER);
 	    if (nodes.getLength() == 0) return null;
 
         return (Element) nodes.item(0);
@@ -253,30 +251,6 @@ public class SecSignature {
     	
     	return xmlDoc.createTextNode((Base64.encode(data)));
  
-    }
-
-    private Element createSTR(Document xmlDoc) {
-        
-    	String qualifiedName = SecConstants.WSSE_PRE + ":" + SecConstants.SECURITY_TOKEN_REFERENCE;
-    	Element secRef = xmlDoc.createElementNS(SecConstants.WSSE_NS, qualifiedName);
- 
-    	Element ref = createReference(xmlDoc);
-    	
-    	ref.setAttribute("URI", "#" + SecConstants.SENDER_CERT);
-    	ref.setAttribute("ValueType",  SecConstants.X509TOKEN_NS + "#X509v3");
- 
-    	secRef.appendChild(ref);
-    	return secRef;
-    	
-    }
-    
-    private Element createReference(Document xmlDoc) {
-
-    	String qualifiedName = SecConstants.WSSE_PRE + ":" + SecConstants.REFERENCE;
-    	Element ref = xmlDoc.createElementNS(SecConstants.WSSE_NS, qualifiedName);
-    	
-    	return ref;
-    	
     }
     
     // get the List of inclusive prefixes from the DOM Element argument; 
