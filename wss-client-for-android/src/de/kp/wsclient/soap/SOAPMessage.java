@@ -15,6 +15,7 @@ import org.w3c.dom.NodeList;
 
 import de.kp.wsclient.security.SecConstants;
 import de.kp.wsclient.security.SecCredentialInfo;
+import de.kp.wsclient.security.SecEncryptor;
 import de.kp.wsclient.security.SecSignature;
 import de.kp.wsclient.security.SecValidator;
 import de.kp.wsclient.xml.XMLSerializer;
@@ -154,6 +155,24 @@ public class SOAPMessage {
 		SecSignature signature = new SecSignature(this.credentialInfo);
 		this.xmlDoc = signature.sign(this.xmlDoc);
 		
+	}
+
+	// this method supports encryption and signing
+	// of the SOAP message; note, that encryption
+	// MUST be invoked BEFORE signing is called
+	
+	public void encryptAndSign() throws Exception {
+				
+		if (this.credentialInfo == null) throw new Exception("No credentials for encryption & signing provided.");
+
+		// encrypt
+		SecEncryptor encryptor = new SecEncryptor(this.credentialInfo);
+		this.xmlDoc = encryptor.encrypt(this.xmlDoc);
+		
+		// sign
+		SecSignature signature = new SecSignature(this.credentialInfo);
+		this.xmlDoc = signature.sign(this.xmlDoc);
+
 	}
 	
 	// this method verifies the signature assigned with th SOAP message

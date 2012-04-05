@@ -3,7 +3,6 @@ package de.kp.wsclient.security;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.security.spec.MGF1ParameterSpec;
 import java.util.ArrayList;
@@ -23,7 +22,6 @@ import org.apache.xml.security.encryption.EncryptedData;
 import org.apache.xml.security.encryption.XMLCipher;
 import org.apache.xml.security.encryption.XMLEncryptionException;
 import org.apache.xml.security.keys.KeyInfo;
-import org.apache.xml.security.utils.Base64;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -33,6 +31,19 @@ import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
 
 import de.kp.wsclient.util.UUIDGenerator;
+
+/*
+ * This class MUST always be used in conjunction with SecSignature, as
+ * e.g. no BinarySecurityToken element is created (done through signing)
+ * 
+ * 
+ * This class implements OASIS Web Services Security X.509 Certificate
+ * Token Profile 1.1 and is restricted to referencing a Binaray Security
+ * Token, i.e. no subject key identifier or a reference to an issuer and
+ * serial number is supported.
+ * 
+ */
+
 
 public class SecEncryptor extends SecBase {
 
@@ -621,40 +632,4 @@ public class SecEncryptor extends SecBase {
     }
 
 }
-
-    /**
-     * Test that encrypts and then signs a WS-Security envelope, then performs
-     * verification and decryption <p/>
-     * 
-        WSSecEncrypt encrypt = new WSSecEncrypt();
-        WSSecSignature sign = new WSSecSignature();
-
-        encrypt.setUserInfo("16c73ab6-b892-458f-abf5-2f875f74882e");
-        sign.setUserInfo("16c73ab6-b892-458f-abf5-2f875f74882e", "security");
-        
-        LOG.info("Before Encryption....");
-        Document doc = SOAPUtil.toSOAPPart(SOAPMSG);
-
-        WSSecHeader secHeader = new WSSecHeader();
-        secHeader.insertSecurityHeader(doc);
-
-        Document encryptedDoc = encrypt.build(doc, crypto, secHeader);
-        
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("After Encryption....");
-            String outputString = 
-                org.apache.ws.security.util.XMLUtils.PrettyDocumentToString(encryptedDoc);
-            LOG.debug(outputString);
-        }
-        
-        Document encryptedSignedDoc = sign.build(encryptedDoc, crypto, secHeader);
-        
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("After Signing....");
-            String outputString = 
-                org.apache.ws.security.util.XMLUtils.PrettyDocumentToString(encryptedSignedDoc);
-            LOG.debug(outputString);
-        }
-        verify(encryptedSignedDoc);
-     */
 
