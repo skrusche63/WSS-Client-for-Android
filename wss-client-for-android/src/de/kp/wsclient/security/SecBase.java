@@ -2,6 +2,7 @@ package de.kp.wsclient.security;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 public class SecBase {
 
@@ -27,6 +28,16 @@ public class SecBase {
     	
     	return ref;
     	
+    }
+
+
+    protected Element getSecHeader(Document xmlDoc) {
+
+	    NodeList nodes = xmlDoc.getElementsByTagNameNS(SecConstants.WSSE_NS, SecConstants.SECURITY);
+	    if (nodes.getLength() == 0) return null;
+
+        return (Element) nodes.item(0);
+
     }
 
 }

@@ -27,7 +27,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
 
 import de.kp.wsclient.util.UUIDGenerator;
@@ -136,7 +135,7 @@ public class SecEncryptor extends SecBase {
              * The method allows to insert the EncryptedKey element at any position 
              * in the Security header.
              */
-        	Element secHeader = getSecHeader();
+        	Element secHeader = getSecHeader(this.xmlDoc);
             SecUtil.prependChildElement(secHeader, encryptedKeyElement);
         
         } else {
@@ -146,7 +145,7 @@ public class SecEncryptor extends SecBase {
              * The reference element must be created by the encryptForExternalRef
              *  method. The method prepends the reference element in the SecurityHeader.
              */
-        	Element secHeader = getSecHeader();
+        	Element secHeader = getSecHeader(this.xmlDoc);
         	SecUtil.prependChildElement(secHeader, refs);
         
         }
@@ -620,15 +619,6 @@ public class SecEncryptor extends SecBase {
 
     		}
         }
-    }
-
-    private Element getSecHeader() {
-
-	    NodeList nodes = this.xmlDoc.getElementsByTagNameNS(SecConstants.WSSE_NS, SecConstants.SECURITY);
-	    if (nodes.getLength() == 0) return null;
-
-        return (Element) nodes.item(0);
-
     }
 
 }

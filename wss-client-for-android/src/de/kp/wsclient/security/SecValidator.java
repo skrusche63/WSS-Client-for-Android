@@ -42,75 +42,71 @@ public class SecValidator {
     public SecValidator() {	
     }
 	
-    public void verify(Document xmlDoc) {
+    public Document verify(Document xmlDoc) throws Exception {
 	
 		boolean valid = false;
 	
-		try {
-	
-		    // acquire signature element
-		    Element sigElement = getSignature(xmlDoc);
-		    if (sigElement == null) throw new Exception("<ds:Signature> Element is missing.");
-	
-		    // create signature element		    
-		    XMLSignature signature = new XMLSignature(sigElement, null);
-	
-		    // acquire KeyInfo
-	        
-	        // the ds:KeyInfo element does not contain values directly, but 
-		    // refers to the binary security token
-		   
-		    KeyInfo keyInfo = signature.getKeyInfo();
-		    if (keyInfo == null) throw new Exception("<ds:KeyInfo> Element is corrupted.");
+	    // acquire signature element
+	    Element sigElement = getSignature(xmlDoc);
+	    if (sigElement == null) throw new Exception("<ds:Signature> Element is missing.");
 
-			 // acquire security token reference
+	    // create signature element		    
+	    XMLSignature signature = new XMLSignature(sigElement, null);
 
-	        Node secTokenRef = getChildNode(keyInfo.getElement(), SecConstants.SECURITY_TOKEN_REFERENCE, SecConstants.WSSE_NS);
-	        if (secTokenRef == null) throw new Exception("Security Token Reference not found.");
+	    // acquire KeyInfo
+        
+        // the ds:KeyInfo element does not contain values directly, but 
+	    // refers to the binary security token
+	   
+	    KeyInfo keyInfo = signature.getKeyInfo();
+	    if (keyInfo == null) throw new Exception("<ds:KeyInfo> Element is corrupted.");
 
-	        // get reference element (= first element of security token reference)
-	        
-	        Element refElement = getFirstElement((Element)secTokenRef);
-	        if (refElement == null) throw new Exception("Invalid security reference.");
+		 // acquire security token reference
 
-	        SecReference ref = new SecReference(refElement);
-	        String refURI  = ref.getURI();
+        Node secTokenRef = getChildNode(keyInfo.getElement(), SecConstants.SECURITY_TOKEN_REFERENCE, SecConstants.WSSE_NS);
+        if (secTokenRef == null) throw new Exception("Security Token Reference not found.");
 
-	        if (refURI == null) throw new Exception("Invalid reference URI.");
+        // get reference element (= first element of security token reference)
+        
+        Element refElement = getFirstElement((Element)secTokenRef);
+        if (refElement == null) throw new Exception("Invalid security reference.");
 
-	        // the reference should refer to the binary security token of the request issuer
-	        String refID = (refURI.charAt(0) == '#') ? refURI.substring(1) : null;
+        SecReference ref = new SecReference(refElement);
+        String refURI  = ref.getURI();
 
-	        // we enforce a binary security token
-	        Element bsToken = getBSToken(xmlDoc, refID);
-	        if (bsToken == null) throw new Exception("No Binary Security Token");
+        if (refURI == null) throw new Exception("Invalid reference URI.");
 
-	        // determine certificate from binary security token	        
-	        X509Certificate cert = getX509Certificate(bsToken); 
+        // the reference should refer to the binary security token of the request issuer
+        String refID = (refURI.charAt(0) == '#') ? refURI.substring(1) : null;
+
+        // we enforce a binary security token
+        Element bsToken = getBSToken(xmlDoc, refID);
+        if (bsToken == null) throw new Exception("No Binary Security Token");
+
+        // determine certificate from binary security token	        
+        X509Certificate cert = getX509Certificate(bsToken); 
+    
+	    //------------------ check signature value ----------------------
 	    
-		    //------------------ check signature value ----------------------
-		    
-		    // the signature is either checked from the public key provided
-		    // or the X509 certificate that comes with the SOAP message
-		    
-		    if (cert == null) {
+	    // the signature is either checked from the public key provided
+	    // or the X509 certificate that comes with the SOAP message
+	    
+	    if (cert == null) {
+
+	    	PublicKey pk = signature.getKeyInfo().getPublicKey();
+	    	if (pk == null) {
+	    		throw new Exception("Did not find Certificate or Public Key");
+	    	}
+	    	valid = signature.checkSignatureValue(pk);
+	    
+	    } else {
+	    	valid = signature.checkSignatureValue(cert);
+	    }
 	
-		    	PublicKey pk = signature.getKeyInfo().getPublicKey();
-		    	if (pk == null) {
-		    		throw new Exception("Did not find Certificate or Public Key");
-		    	}
-		    	valid = signature.checkSignatureValue(pk);
-		    
-		    } else {
-		    	valid = signature.checkSignatureValue(cert);
-		    }
-		
-		    if (valid == false) throw new Exception("Invalid signature found.");
-		    
-		} catch (Exception e) {
-		    e.printStackTrace();
-		}
-   
+	    if (valid == false) throw new Exception("Invalid signature found.");
+ 
+	    return xmlDoc;
+	    
 	}
 
     private Element getSignature(Document xmlDoc) throws Exception {

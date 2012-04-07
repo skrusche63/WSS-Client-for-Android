@@ -15,6 +15,7 @@ import org.w3c.dom.NodeList;
 
 import de.kp.wsclient.security.SecConstants;
 import de.kp.wsclient.security.SecCredentialInfo;
+import de.kp.wsclient.security.SecDecryptor;
 import de.kp.wsclient.security.SecEncryptor;
 import de.kp.wsclient.security.SecSignature;
 import de.kp.wsclient.security.SecValidator;
@@ -26,6 +27,11 @@ public class SOAPMessage {
 	
 	private Element header;
 	private Element body;
+	
+	// this is the first child
+	// of the body element
+	
+	private Element content;
 	
 	private String bodyId = "TheBody";
 	
@@ -141,8 +147,14 @@ public class SOAPMessage {
 	
 	public Node getContent() throws Exception {
 
-		if (this.body == null) throw new Exception("Invalid SOAP Message detected (missing body).");
-		return this.body.getFirstChild();
+		if (this.content == null) {
+			if (this.body == null) throw new Exception("Invalid SOAP Message detected (missing body).");
+			return this.body.getFirstChild();
+			
+		} else {
+			return this.content;
+			
+		}
 
 	}
 	
@@ -177,10 +189,31 @@ public class SOAPMessage {
 	
 	// this method verifies the signature assigned with th SOAP message
 	
-	public void verify() {
+	public void verify() throws Exception {
 		
 		SecValidator validator = new SecValidator();
 		validator.verify(this.xmlDoc);
+		
+	}
+	
+	// this method supports verification of a signed
+	// SOAP message and afterwards decryption of the
+	// respective content
+	
+	public void verifyAndDecrypt() throws Exception {
+		
+		// verify signature of SOAP message
+		SecValidator validator = new SecValidator();
+		this.xmlDoc = validator.verify(this.xmlDoc);
+		
+		// decrypt content of SOAP message (this is
+		// actually restricted to the BODY element)
+		
+		SecDecryptor decryptor = new SecDecryptor();
+		this.xmlDoc = decryptor.decrypt(this.xmlDoc);
+		
+		// retrieve decrypted content
+		this.content = decryptor.getDecryptedElement();
 		
 	}
 	

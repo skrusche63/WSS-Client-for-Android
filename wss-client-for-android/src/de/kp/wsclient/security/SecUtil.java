@@ -1,10 +1,17 @@
 package de.kp.wsclient.security;
 
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import javax.crypto.Cipher;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+
+import org.apache.xml.security.algorithms.JCEMapper;
 import org.apache.xml.security.utils.Base64;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -345,6 +352,83 @@ public class SecUtil {
             id = id.substring(1);
         }
         return id;
+    }
+
+    /*
+     * Translate the "cipherAlgo" URI to a JCE ID, and return a javax.crypto.Cipher instance
+     * of this type. 
+     */
+    public static Cipher getCipherInstance(String cipherAlgo) throws Exception {
+
+    	try {
+            String keyAlgorithm = JCEMapper.translateURItoJCEID(cipherAlgo);
+            return Cipher.getInstance(keyAlgorithm);
+        
+    	} catch (NoSuchPaddingException ex) {
+            throw new Exception("[SecUtil] Unsupported algorithm.");
+        
+    	} catch (NoSuchAlgorithmException ex) {
+
+    		// Check to see if an RSA OAEP MGF-1 with SHA-1 algorithm was requested
+            // Some JDKs don't support RSA/ECB/OAEPPadding
+
+    		if (SecConstants.KEYTRANSPORT_RSAOEP.equals(cipherAlgo)) {
+                try {
+                    return Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding");
+            
+                } catch (Exception e) {
+                    throw new Exception("[SecUtil] Unsupported algorithm.");
+                }
+            
+            } else {
+                throw new Exception("[SecUtil] Unsupported algorithm.");
+
+            }
+        
+    	}
+    }
+
+    /*
+     * Convert the raw key bytes into a SecretKey object of type symEncAlgo.
+     */
+ 
+    public static SecretKey prepareSecretKey(String symEncAlgo, byte[] rawKey) {
+    
+    	// Do an additional check on the keysize required by the encryption algorithm
+        int size = 0;
+        try {
+            size = JCEMapper.getKeyLengthFromURI(symEncAlgo) / 8;
+        
+        } catch (Exception e) {
+            // ignore - some unknown (to JCEMapper) encryption algorithm
+        }
+
+        String keyAlgorithm = JCEMapper.getJCEKeyAlgorithmFromURI(symEncAlgo);
+        SecretKeySpec keySpec;
+        
+        if (size > 0) {
+            keySpec = new SecretKeySpec(rawKey, 0, ((rawKey.length > size) ? size : rawKey.length), keyAlgorithm);
+        
+        } else {
+            keySpec = new SecretKeySpec(rawKey, keyAlgorithm);
+        }
+        
+        return (SecretKey)keySpec;
+    
+    }
+
+    public static boolean isContent(Node encBodyData) {
+
+    	if (encBodyData != null) {
+        
+    		String typeStr = ((Element)encBodyData).getAttribute("Type");
+            if (typeStr != null) {
+                 return typeStr.equals(SecConstants.ENC_NS + "Content");
+            }
+        }
+    	
+        return true;
+    
     }
 
 }
