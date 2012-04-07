@@ -109,11 +109,11 @@ public class SecEncryptor extends SecBase {
         prepare();
 	        
         Element envelope = xmlDoc.getDocumentElement();
-        List<WSEncryptionPart> parts = new ArrayList<WSEncryptionPart>();
+        List<SecEncPart> parts = new ArrayList<SecEncPart>();
 
         String soapNamespace = SecUtil.getSOAPNamespace(envelope);
             
-        WSEncryptionPart encP = new WSEncryptionPart(SecConstants.ELEM_BODY, soapNamespace, "Content");
+        SecEncPart encP = new SecEncPart(SecConstants.ELEM_BODY, soapNamespace, "Content");
         parts.add(encP);
         
         Element refs = encryptForRef(parts);
@@ -304,7 +304,7 @@ public class SecEncryptor extends SecBase {
      * element.
      */
 
-	public Element encryptForRef(List<WSEncryptionPart> references) throws Exception {
+	public Element encryptForRef(List<SecEncPart> references) throws Exception {
 
         List<String> encDataRefs = doEncryption(symmetricKey, symEncAlgo, references);
 
@@ -331,7 +331,7 @@ public class SecEncryptor extends SecBase {
 
     // Perform encryption on the SOAP envelope.
 
-	public List<String> doEncryption(SecretKey secretKey, String encryptionAlgorithm, List<WSEncryptionPart> references) throws Exception {
+	public List<String> doEncryption(SecretKey secretKey, String encryptionAlgorithm, List<SecEncPart> references) throws Exception {
 
         XMLCipher xmlCipher = null;
         try {
@@ -345,7 +345,7 @@ public class SecEncryptor extends SecBase {
         List<String> encDataRef = new ArrayList<String>();
         for (int part = 0; part < references.size(); part++) {
 
-        	WSEncryptionPart encPart = references.get(part);
+        	SecEncPart encPart = references.get(part);
             
             // Get the data to encrypt.
         	DOMCallbackLookup callbackLookup = new DOMCallbackLookup(this.xmlDoc);

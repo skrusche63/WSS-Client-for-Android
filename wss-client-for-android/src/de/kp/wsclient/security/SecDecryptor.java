@@ -18,7 +18,7 @@ import org.w3c.dom.Text;
 public class SecDecryptor extends SecBase {
 
 	private Document xmlDoc;
-	private List<WSDataRef> dataRefs;
+	private List<SecDataRef> dataRefs;
 	
 	static {
     	// initialize apache santuario framework
@@ -116,7 +116,7 @@ public class SecDecryptor extends SecBase {
 	public Element getDecryptedElement() {
 		
 		if ((this.dataRefs == null) || (this.dataRefs.size() == 0)) return null;
-		WSDataRef dataRef = this.dataRefs.get(0);
+		SecDataRef dataRef = this.dataRefs.get(0);
 		
 		return dataRef.getProtectedElement();
 		
@@ -124,7 +124,7 @@ public class SecDecryptor extends SecBase {
 	
     // Decrypt all data references
 
-	private List<WSDataRef> decryptDataRefs(List<String> dataRefURIs, byte[] decryptedBytes) throws Exception {
+	private List<SecDataRef> decryptDataRefs(List<String> dataRefURIs, byte[] decryptedBytes) throws Exception {
 
         // At this point we have the decrypted session (symmetric) key. According
         // to W3C XML-Enc this key is used to decrypt _any_ references contained in
@@ -133,10 +133,10 @@ public class SecDecryptor extends SecBase {
             return null;
         }
         
-        List<WSDataRef> dataRefs = new ArrayList<WSDataRef>();
+        List<SecDataRef> dataRefs = new ArrayList<SecDataRef>();
         for (String dataRefURI:dataRefURIs) {
  
-        	WSDataRef dataRef = decryptDataRef(dataRefURI, decryptedBytes);
+        	SecDataRef dataRef = decryptDataRef(dataRefURI, decryptedBytes);
             dataRefs.add(dataRef);
         
         }
@@ -146,7 +146,7 @@ public class SecDecryptor extends SecBase {
 
     // Decrypt an EncryptedData element referenced by dataRefURI
 
-	private WSDataRef decryptDataRef(String dataRefURI, byte[] decryptedData) throws Exception {
+	private SecDataRef decryptDataRef(String dataRefURI, byte[] decryptedData) throws Exception {
  
         // Find the encrypted data element referenced by dataRefURI
         Element encryptedDataElement = findEncryptedDataElement(dataRefURI);
@@ -198,7 +198,7 @@ public class SecDecryptor extends SecBase {
 	
     // Decrypt the EncryptedData argument using a SecretKey.
 
-	public WSDataRef decryptEncryptedData(String dataRefURI, Element encData, SecretKey symmetricKey, String symEncAlgo) throws Exception {
+	public SecDataRef decryptEncryptedData(String dataRefURI, Element encData, SecretKey symmetricKey, String symEncAlgo) throws Exception {
 
 		XMLCipher xmlCipher = null;
         try {
@@ -213,7 +213,7 @@ public class SecDecryptor extends SecBase {
             
         }
 
-        WSDataRef dataRef = new WSDataRef();
+        SecDataRef dataRef = new SecDataRef();
 
         dataRef.setWsuId(dataRefURI);
         dataRef.setAlgorithm(symEncAlgo);

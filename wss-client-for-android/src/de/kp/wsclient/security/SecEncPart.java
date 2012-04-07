@@ -24,7 +24,7 @@ import org.w3c.dom.Element;
 /**
  * @author Werner Dittmann (Werner.Dittmann@siemens.com)
  */
-public class WSEncryptionPart {
+public class SecEncPart {
 
     private String name;
     private String namespace;
@@ -57,7 +57,7 @@ public class WSEncryptionPart {
      * @param nmspace Element's namespace
      * @param encMod The encryption modifier
      */
-    public WSEncryptionPart(String nm, String nmspace, String encMod) {
+    public SecEncPart(String nm, String nmspace, String encMod) {
         name = nm;
         namespace = nmspace;
         encModifier = encMod;
@@ -72,7 +72,7 @@ public class WSEncryptionPart {
      * 
      * @param id The Id to of the element to process
      */
-    public WSEncryptionPart(String id) {
+    public SecEncPart(String id) {
         this.id = id;
         name = namespace = encModifier = null;
     }
@@ -93,7 +93,7 @@ public class WSEncryptionPart {
      * @param id The Id to of the element to process
      * @param encMod The encryption modifier
      */
-    public WSEncryptionPart(String id, String encMod) {
+    public SecEncPart(String id, String encMod) {
         this.id = id;
         encModifier = encMod;
         name = namespace = null;

@@ -32,7 +32,7 @@ import java.util.List;
 import javax.xml.namespace.QName;
 import org.w3c.dom.Element;
 
-public class WSDataRef {
+public class SecDataRef {
     
     /**
      * wsu:Id of the protected element

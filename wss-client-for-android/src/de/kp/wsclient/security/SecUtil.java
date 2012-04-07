@@ -195,7 +195,7 @@ public class SecUtil {
      * The "Id" is used before the Element localname/namespace.
      */
 
-    public static List<Element> findElements(WSEncryptionPart part, CallbackLookup callbackLookup, Document doc) throws Exception {
+    public static List<Element> findElements(SecEncPart part, CallbackLookup callbackLookup, Document doc) throws Exception {
 
     	// See if the DOM Element is stored in the WSEncryptionPart first
         if (part.getElement() != null) {
