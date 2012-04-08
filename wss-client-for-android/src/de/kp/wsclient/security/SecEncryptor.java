@@ -43,7 +43,6 @@ import de.kp.wsclient.util.UUIDGenerator;
  * 
  */
 
-
 public class SecEncryptor extends SecBase {
 
 	static {
@@ -63,19 +62,16 @@ public class SecEncryptor extends SecBase {
     // Encrypted bytes of the ephemeral key
     private byte[] encryptedEphemeralKey;
 
-    // Algorithm used to encrypt the ephemeral key
+    // DEFAULT Algorithm used to encrypt the ephemeral key
     private String keyEncAlgo = SecConstants.KEYTRANSPORT_RSA15;
     
-    // Algorithm to be used with the ephemeral key
+    // DEFAULT Algorithm to be used with the ephemeral key.
+    // This parameter determines the key generator.
     private String symEncAlgo = SecConstants.AES_128;
 
     // xenc:EncryptedKey element
     private Element encryptedKeyElement = null;
 
-    // Indicates whether to encrypt the symmetric key into an EncryptedKey or not.
-    private boolean encryptSymmKey = true;
-
-    // The Token identifier of the token that the DerivedKeyToken is (or to be) derived from.
     private String encKeyId = null;
 
     private KeyInfo keyInfo;
@@ -159,7 +155,7 @@ public class SecEncryptor extends SecBase {
 		// the subsequent part of code is adapted from the 'prepare'
 		// method of WSS4J (1.6.4) WSSecEncrypt
 	    /*
-	     * If no external key (symmetricalKey) was set generate an encryption
+	     * If no external key (symmetricalKey) was set, generate an encryption
 	     * key (session key) for this Encrypt element. This key will be
 	     * encrypted using the public key of the receiver
 	     */
@@ -181,13 +177,7 @@ public class SecEncryptor extends SecBase {
 	     * algorithm that will encrypt the generated symmetric (session) key.
 	     */
 	    
-	    if (this.encryptSymmKey) {
-	        prepareInternal(this.symmetricKey, this.certificate);
-	
-	    } else {
-	        this.encryptedEphemeralKey = this.ephemeralKey;
-	
-	    }
+        prepareInternal(this.symmetricKey, this.certificate);
 
 	}
 
@@ -198,15 +188,18 @@ public class SecEncryptor extends SecBase {
 
 	private void prepareInternal(SecretKey secretKey, X509Certificate remoteCert) throws Exception {
     
-		Cipher cipher = getCipherInstance(keyEncAlgo);
+		Cipher cipher = getCipherInstance(this.keyEncAlgo);
 	    try {
 	    	
 	        OAEPParameterSpec oaepParameterSpec = null;
-	        if (SecConstants.KEYTRANSPORT_RSAOEP.equals(keyEncAlgo)) {
+	        
+	        // the default encoding algorithm is SecConstants.KEYTRANSPORT_RSA15
+	        if (SecConstants.KEYTRANSPORT_RSAOEP.equals(this.keyEncAlgo)) {
 	            oaepParameterSpec = new OAEPParameterSpec("SHA-1", "MGF1", new MGF1ParameterSpec("SHA-1"), PSource.PSpecified.DEFAULT);
 	        }
 	        
 	        if (oaepParameterSpec == null) {
+	        	// this is the default way to initialize the Cipher instance
 	            cipher.init(Cipher.WRAP_MODE, remoteCert);
 	        
 	        } else {
@@ -222,7 +215,7 @@ public class SecEncryptor extends SecBase {
 	    }
    
 	    try {
-	        encryptedEphemeralKey = cipher.wrap(secretKey);
+	        this.encryptedEphemeralKey = cipher.wrap(secretKey);
 	    
 	    } catch (IllegalStateException ex) {
 	        throw new Exception("Encryption failed: " + ex.getMessage());
@@ -254,7 +247,7 @@ public class SecEncryptor extends SecBase {
 	     * 
 	     */
 	    
-	    this.encryptedKeyElement = createEncryptedKey(this.keyEncAlgo);
+	    this.encryptedKeyElement = createEncKeyElement(this.keyEncAlgo);
 	    
 	    if (this.encKeyId == null || "".equals(this.encKeyId)) {
 	        this.encKeyId = "EK-" + UUIDGenerator.getUUID();
@@ -287,7 +280,7 @@ public class SecEncryptor extends SecBase {
 	     * </xenc:CipherData>
 	     */
 	    
-	    Text keyText = SecUtil.createBase64EncodedTextNode(this.xmlDoc, encryptedEphemeralKey);
+	    Text keyText = SecUtil.createBase64EncodedTextNode(this.xmlDoc, this.encryptedEphemeralKey);
     
 	    Element xencCipherValue = createCipherValue(this.encryptedKeyElement);
 	    xencCipherValue.appendChild(keyText);
@@ -316,15 +309,6 @@ public class SecEncryptor extends SecBase {
          */
         
         Element referenceList = this.xmlDoc.createElementNS(SecConstants.ENC_NS, SecConstants.ENC_PRE + ":ReferenceList");
- 
-        // If we're not placing the ReferenceList in an EncryptedKey structure,
-        // then add the ENC namespace
-
-        if (!encryptSymmKey) {
-            SecUtil.setNamespace(referenceList, SecConstants.ENC_NS, SecConstants.ENC_PRE);
-        
-        }
-       
         return createDataRefList(referenceList, encDataRefs);
     
 	}
@@ -402,6 +386,10 @@ public class SecEncryptor extends SecBase {
         	String headerId = "";
             if ("Header".equals(modifier)) {
             	
+            	// the modifier used with this encryption method is actually
+            	// restricted to "Content", i.e. this part of code is provided
+            	// for future usage.
+            	
                 Element elem = this.xmlDoc.createElementNS(SecConstants.WSSE11_NS, "wsse11:" + SecConstants.ENCRYPTED_HEADER);
                 SecUtil.setNamespace(elem, SecConstants.WSSE11_NS, SecConstants.WSSE11_PRE);
                 
@@ -431,6 +419,9 @@ public class SecEncryptor extends SecBase {
                     }
                 }
             }
+            
+            // this is the DEFAULT way to encrypt the content,
+            // i.e. the body of a SOAP message
             
             xmlCipher.init(XMLCipher.ENCRYPT_MODE, secretKey);
             
@@ -497,26 +488,27 @@ public class SecEncryptor extends SecBase {
     }
 
 	private KeyGenerator getKeyGenerator() throws Exception {
-
-		// Assume AES as default, so initialize it
-    
+   
 		try {
+
+			// Algorithm to be used with the ephemeral key::SecConstants.AES_128 (DEFAULT)
 			
-	        String keyAlgorithm = JCEMapper.getJCEKeyAlgorithmFromURI(symEncAlgo);
+	        String keyAlgorithm = JCEMapper.getJCEKeyAlgorithmFromURI(this.symEncAlgo);
 	        
 	        if (keyAlgorithm == null || "".equals(keyAlgorithm)) {
-	            keyAlgorithm = JCEMapper.translateURItoJCEID(symEncAlgo);
+	            keyAlgorithm = JCEMapper.translateURItoJCEID(this.symEncAlgo);
 	        }
 	
 	        KeyGenerator keyGen = KeyGenerator.getInstance(keyAlgorithm);
-	        
-	        if (symEncAlgo.equalsIgnoreCase(SecConstants.AES_128) || symEncAlgo.equalsIgnoreCase(SecConstants.AES_128_GCM)) {
+
+	        if (this.symEncAlgo.equalsIgnoreCase(SecConstants.AES_128) || this.symEncAlgo.equalsIgnoreCase(SecConstants.AES_128_GCM)) {
+	        	// this is the default way to initialize the key generator
 	            keyGen.init(128);
 	        
-	        } else if (symEncAlgo.equalsIgnoreCase(SecConstants.AES_192) || symEncAlgo.equalsIgnoreCase(SecConstants.AES_192_GCM)) {
+	        } else if (this.symEncAlgo.equalsIgnoreCase(SecConstants.AES_192) || this.symEncAlgo.equalsIgnoreCase(SecConstants.AES_192_GCM)) {
 	            keyGen.init(192);
 	        
-	        } else if (symEncAlgo.equalsIgnoreCase(SecConstants.AES_256) || symEncAlgo.equalsIgnoreCase(SecConstants.AES_256_GCM)) {
+	        } else if (this.symEncAlgo.equalsIgnoreCase(SecConstants.AES_256) || this.symEncAlgo.equalsIgnoreCase(SecConstants.AES_256_GCM)) {
 	            keyGen.init(256);
 	        }
 	        
@@ -532,7 +524,7 @@ public class SecEncryptor extends SecBase {
      * Create DOM subtree for <code>xenc:EncryptedKey</code>
      */
  
-	protected Element createEncryptedKey(String keyTransportAlgo) {
+	protected Element createEncKeyElement(String keyTransportAlgo) {
 		
         Element encryptedKey = this.xmlDoc.createElementNS(SecConstants.ENC_NS, SecConstants.ENC_PRE + ":EncryptedKey");
 
@@ -591,7 +583,7 @@ public class SecEncryptor extends SecBase {
      * a javax.crypto.Cipher instance of this type. 
      */
 	
-    public static Cipher getCipherInstance(String cipherAlgo) throws Exception {
+    public Cipher getCipherInstance(String cipherAlgo) throws Exception {
 
     	try {
             String keyAlgorithm = JCEMapper.translateURItoJCEID(cipherAlgo);

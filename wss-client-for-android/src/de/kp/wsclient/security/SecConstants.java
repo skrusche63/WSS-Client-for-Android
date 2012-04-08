@@ -3,12 +3,29 @@ package de.kp.wsclient.security;
 public class SecConstants {
 
     // namespaces	
+	
+	/*
+	 * Key Transport algorithms are public key encryption algorithms especially specified for 
+	 * encrypting and decrypting keys. Their identifiers appear as Algorithm attributes to 
+	 * EncryptionMethod elements that are children of EncryptedKey. EncryptedKey is in turn 
+	 * the child of a ds:KeyInfo element. The type of key being transported, that is to say 
+	 * the algorithm in which it is planned to use the transported key, is given by the Algorithm 
+	 * attribute of the EncryptionMethod child of the EncryptedData or EncryptedKey parent of 
+	 * this ds:KeyInfo element.
+	 * 
+	 * Key Transport algorithms may optionally be used to encrypt data in which case they appear 
+	 * directly as the Algorithm attribute of an EncryptionMethod child of an EncryptedData element. 
+	 * Because they use public key algorithms directly, Key Transport algorithms are not efficient 
+	 * for the transport of any amounts of data significantly larger than symmetric keys. 
+	 */
+
     public static final String KEYTRANSPORT_RSA15  = "http://www.w3.org/2001/04/xmlenc#rsa-1_5";
     public static final String KEYTRANSPORT_RSAOEP = "http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p";
 
     public static final String AES_128     = "http://www.w3.org/2001/04/xmlenc#aes128-cbc";
     public static final String AES_256 	   = "http://www.w3.org/2001/04/xmlenc#aes256-cbc";
     public static final String AES_192 	   = "http://www.w3.org/2001/04/xmlenc#aes192-cbc";
+    
     public static final String AES_128_GCM = "http://www.w3.org/2009/xmlenc11#aes128-gcm";
     public static final String AES_192_GCM = "http://www.w3.org/2009/xmlenc11#aes192-gcm";
     public static final String AES_256_GCM = "http://www.w3.org/2009/xmlenc11#aes256-gcm";

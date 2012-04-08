@@ -19,6 +19,7 @@ import de.kp.wsclient.security.SecDecryptor;
 import de.kp.wsclient.security.SecEncryptor;
 import de.kp.wsclient.security.SecSignature;
 import de.kp.wsclient.security.SecValidator;
+import de.kp.wsclient.util.UUIDGenerator;
 import de.kp.wsclient.xml.XMLSerializer;
 
 public class SOAPMessage {
@@ -33,7 +34,7 @@ public class SOAPMessage {
 	
 	private Element content;
 	
-	private String bodyId = "TheBody";
+	private String bodyId = "BE-" + UUIDGenerator.getUUID();
 	
 	private SecCredentialInfo credentialInfo;
 	
@@ -141,13 +142,16 @@ public class SOAPMessage {
 	public void setContent(Node content) throws Exception {
 		
 		if (this.body == null) throw new Exception("Invalid SOAP Message detected (missing body).");
-		this.body.appendChild(content);
+		
+		Node clone = content.cloneNode(true);
+		this.body.appendChild(clone);
 		
 	}
 	
 	public Node getContent() throws Exception {
 
 		if (this.content == null) {
+
 			if (this.body == null) throw new Exception("Invalid SOAP Message detected (missing body).");
 			return this.body.getFirstChild();
 			

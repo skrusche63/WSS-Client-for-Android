@@ -2,10 +2,20 @@ package de.kp.wsclient.soap;
 
 import org.w3c.dom.Node;
 
+import android.content.Context;
+
 import de.kp.wsclient.security.SecCredentialInfo;
 
 public class SOAPUtil {
 
+	// this is a helper method to build a credential info instance from
+	// the user's alias & password
+	
+	public static SecCredentialInfo getCredentialInfo(Context context, String alias, String password) {
+		return new SecCredentialInfo(context, alias, password);
+	}
+	
+	// this is a helper method to create a new SOAP message
 	public static SOAPMessage createSOAPMessage(SecCredentialInfo credentialInfo) {
 		return new SOAPMessage(credentialInfo);		
 	}
