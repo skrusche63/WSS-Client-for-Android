@@ -102,7 +102,11 @@ public class SecEncryptor extends SecBase {
 		// with other encryption methods
 		
 		this.xmlDoc = xmlDoc;		
-        prepare();
+
+		Element soapHeader = getSOAPHeader(xmlDoc);
+		if (soapHeader == null) throw new Exception("SOAP Header not found.");
+
+		prepare();
 	        
         Element envelope = xmlDoc.getDocumentElement();
         List<SecEncPart> parts = new ArrayList<SecEncPart>();
@@ -113,6 +117,8 @@ public class SecEncryptor extends SecBase {
         parts.add(encP);
         
         Element refs = encryptForRef(parts);
+        Element secHeader = getSecHeader(this.xmlDoc);
+        
         if (this.encryptedKeyElement != null) {
 
             /*
@@ -131,7 +137,6 @@ public class SecEncryptor extends SecBase {
              * The method allows to insert the EncryptedKey element at any position 
              * in the Security header.
              */
-        	Element secHeader = getSecHeader(this.xmlDoc);
             SecUtil.prependChildElement(secHeader, encryptedKeyElement);
         
         } else {
@@ -141,11 +146,11 @@ public class SecEncryptor extends SecBase {
              * The reference element must be created by the encryptForExternalRef
              *  method. The method prepends the reference element in the SecurityHeader.
              */
-        	Element secHeader = getSecHeader(this.xmlDoc);
         	SecUtil.prependChildElement(secHeader, refs);
         
         }
-
+        
+        soapHeader.appendChild(secHeader);
         return xmlDoc;
         
     }

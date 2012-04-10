@@ -51,5 +51,23 @@ public class SecBase {
 		return xmlDoc.createElementNS(SecConstants.WSSE_NS, qualifiedName);
 		
 	}
+	
+    protected Element getSOAPHeader(Document xmlDoc) {
+
+	    NodeList nodes = xmlDoc.getElementsByTagNameNS(SecConstants.URI_SOAP12_ENV, SecConstants.ELEM_HEADER);
+	    if (nodes.getLength() == 0) return null;
+
+        return (Element) nodes.item(0);
+
+    }
+
+    protected Element getSOAPBody(Document xmlDoc) {
+
+	    NodeList nodes = xmlDoc.getElementsByTagNameNS(SecConstants.URI_SOAP12_ENV, SecConstants.ELEM_BODY);
+	    if (nodes.getLength() == 0) return null;
+
+        return (Element) nodes.item(0);
+
+    }
 
 }

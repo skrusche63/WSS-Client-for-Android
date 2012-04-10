@@ -18,7 +18,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
 
 public class SecSignature extends SecBase {
@@ -240,24 +239,6 @@ public class SecSignature extends SecBase {
 		return sigAlgo;
 
 	}
-	
-    private Element getSOAPHeader(Document xmlDoc) {
-
-	    NodeList nodes = xmlDoc.getElementsByTagNameNS(SecConstants.URI_SOAP12_ENV, SecConstants.ELEM_HEADER);
-	    if (nodes.getLength() == 0) return null;
-
-        return (Element) nodes.item(0);
-
-    }
-
-    private Element getSOAPBody(Document xmlDoc) {
-
-	    NodeList nodes = xmlDoc.getElementsByTagNameNS(SecConstants.URI_SOAP12_ENV, SecConstants.ELEM_BODY);
-	    if (nodes.getLength() == 0) return null;
-
-        return (Element) nodes.item(0);
-
-    }
 
     private Text createToken(Document xmlDoc) throws Exception {
         
