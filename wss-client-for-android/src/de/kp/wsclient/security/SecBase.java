@@ -31,13 +31,21 @@ public class SecBase {
     }
 
 
-    protected Element getSecHeader(Document xmlDoc) {
+    protected Element getSecHeader(Document xmlDoc) throws Exception {
 
 	    NodeList nodes = xmlDoc.getElementsByTagNameNS(SecConstants.WSSE_NS, SecConstants.SECURITY);
-	    if (nodes.getLength() == 0) return null;
+	    if (nodes.getLength() == 0) return createSecHeader(xmlDoc);
 
         return (Element) nodes.item(0);
 
     }
+
+    
+	protected Element createSecHeader(Document xmlDoc) throws Exception {
+		
+		String qualifiedName = SecConstants.WSSE_PRE + ":" + SecConstants.SECURITY;
+		return xmlDoc.createElementNS(SecConstants.WSSE_NS, qualifiedName);
+		
+	}
 
 }

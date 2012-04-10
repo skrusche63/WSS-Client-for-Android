@@ -67,8 +67,7 @@ public class SecSignature extends SecBase {
 	
 	private Element createWSSESecurity(Document xmlDoc) throws Exception {
 		
-		String qualifiedName = SecConstants.WSSE_PRE + ":" + SecConstants.SECURITY;
-		this.wsseSecurity = xmlDoc.createElementNS(SecConstants.WSSE_NS, qualifiedName);
+		this.wsseSecurity = getSecHeader(xmlDoc);
 		
 		// add wsse:BinarySecurityToken
 		Element wsseBinarySecurityToken = createWSSEBinarySecurityToken(xmlDoc);
