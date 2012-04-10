@@ -204,7 +204,8 @@ public class SecSignature extends SecBase {
         
         transforms.item(0).getElement().appendChild(inclusiveNamespaces.getElement());
         
-        String referenceURI = "#TheBody";
+        Element body = getSOAPBody(xmlDoc);
+        String referenceURI = "#" + body.getAttribute("id");
         
         // the digest method used with the subsequent call is
         // <ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
@@ -238,6 +239,15 @@ public class SecSignature extends SecBase {
     private Element getSOAPHeader(Document xmlDoc) {
 
 	    NodeList nodes = xmlDoc.getElementsByTagNameNS(SecConstants.URI_SOAP12_ENV, SecConstants.ELEM_HEADER);
+	    if (nodes.getLength() == 0) return null;
+
+        return (Element) nodes.item(0);
+
+    }
+
+    private Element getSOAPBody(Document xmlDoc) {
+
+	    NodeList nodes = xmlDoc.getElementsByTagNameNS(SecConstants.URI_SOAP12_ENV, SecConstants.ELEM_BODY);
 	    if (nodes.getLength() == 0) return null;
 
         return (Element) nodes.item(0);
