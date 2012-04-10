@@ -56,10 +56,16 @@ public class SecSignature extends SecBase {
 		// acquire SOAP header element
 		Element soapHeader = getSOAPHeader(xmlDoc);
 		if (soapHeader == null) throw new Exception("SOAP Header not found.");
+
+		// this method determines whether there is already
+		// a wsse:Security element present due to former
+		// encryption processing
+		
+		boolean hasSecHeader = isSecHeader(xmlDoc);
 		
 		// add wsse:Security element to SOAP Header
 		this.wsseSecurity = createWSSESecurity(xmlDoc);
-		soapHeader.appendChild(wsseSecurity);
+		if (hasSecHeader == false) soapHeader.appendChild(wsseSecurity);
 		
 		return xmlDoc;
 
