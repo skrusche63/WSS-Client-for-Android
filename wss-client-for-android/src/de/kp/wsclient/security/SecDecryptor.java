@@ -112,8 +112,8 @@ public class SecDecryptor extends SecBase {
         byte[] ephemeralKey = null;
 	            
         try {
-            encryptedEphemeralKey = getDecodedBase64EncodedData(xencCipherValue);            
-
+            encryptedEphemeralKey = getDecodedBase64EncodedData(xencCipherValue);      
+            
             cipher.init(Cipher.UNWRAP_MODE, remoteCert);
             //ephemeralKey = cipher.doFinal(encryptedEphemeralKey);
             

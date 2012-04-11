@@ -3,21 +3,21 @@ package de.kp.wsclient.security.test;
 import java.security.PrivateKey;
 import java.util.Arrays;
 
-public class TextContext {
+public class TestContext {
 
-	private static TextContext instance = new TextContext();
+	private static TestContext instance = new TestContext();
 	
 	private byte[] SecEncryptor_cipherValue;
 	private byte[] SecDecryptor_cipherValue;
 	
 	private PrivateKey privateKey;
 	
-	private TextContext() {
+	private TestContext() {
 		
 	}
 	
-	public static TextContext getInstance() {
-		if (instance == null) instance = new TextContext();
+	public static TestContext getInstance() {
+		if (instance == null) instance = new TestContext();
 		return instance;
 	}
 	
