@@ -117,7 +117,7 @@ public class SecDecryptor extends SecBase {
             cipher.init(Cipher.UNWRAP_MODE, remoteCert);
             //ephemeralKey = cipher.doFinal(encryptedEphemeralKey);
             
-            String keyAlgorithm = SecUtil.getKeyAlgorithm(encAlgo);
+            String keyAlgorithm = SecUtil.getKeyAlgorithm(SecConstants.AES_128);
             Key key = cipher.unwrap(encryptedEphemeralKey, keyAlgorithm, Cipher.SECRET_KEY);
             
             ephemeralKey = key.getEncoded();            

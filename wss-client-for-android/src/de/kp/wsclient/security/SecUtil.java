@@ -361,7 +361,7 @@ public class SecUtil {
     public static Cipher getCipherInstance(String cipherAlgo) throws Exception {
 
     	try {
-            String keyAlgorithm = getKeyAlgorithm(cipherAlgo);
+            String keyAlgorithm =  JCEMapper.translateURItoJCEID(cipherAlgo);
             return Cipher.getInstance(keyAlgorithm);
         
     	} catch (NoSuchPaddingException ex) {
@@ -388,8 +388,16 @@ public class SecUtil {
     	}
     }
 
-    public static String getKeyAlgorithm(String cipherAlgo) {
-        return JCEMapper.translateURItoJCEID(cipherAlgo);    	
+    public static String getKeyAlgorithm(String symEncAlgo) {
+
+    	String keyAlgorithm = JCEMapper.getJCEKeyAlgorithmFromURI(symEncAlgo);
+        
+        if (keyAlgorithm == null || "".equals(keyAlgorithm)) {
+            keyAlgorithm = JCEMapper.translateURItoJCEID(symEncAlgo);
+        }
+        
+        return keyAlgorithm;
+        
     }
     
     /*
