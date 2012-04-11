@@ -361,7 +361,7 @@ public class SecUtil {
     public static Cipher getCipherInstance(String cipherAlgo) throws Exception {
 
     	try {
-            String keyAlgorithm = JCEMapper.translateURItoJCEID(cipherAlgo);
+            String keyAlgorithm = getKeyAlgorithm(cipherAlgo);
             return Cipher.getInstance(keyAlgorithm);
         
     	} catch (NoSuchPaddingException ex) {
@@ -388,6 +388,10 @@ public class SecUtil {
     	}
     }
 
+    public static String getKeyAlgorithm(String cipherAlgo) {
+        return JCEMapper.translateURItoJCEID(cipherAlgo);    	
+    }
+    
     /*
      * Convert the raw key bytes into a SecretKey object of type symEncAlgo.
      */

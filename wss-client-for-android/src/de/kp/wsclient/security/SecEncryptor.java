@@ -15,8 +15,6 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource;
-import javax.crypto.spec.SecretKeySpec;
-
 import org.apache.xml.security.algorithms.JCEMapper;
 import org.apache.xml.security.encryption.EncryptedData;
 import org.apache.xml.security.encryption.XMLCipher;
@@ -175,7 +173,7 @@ public class SecEncryptor extends SecBase {
 	    
 	    }
 	    
-	    if (this.symmetricKey == null) this.symmetricKey = prepareSecretKey(this.symEncAlgo, this.ephemeralKey);
+	    // if (this.symmetricKey == null) this.symmetricKey = prepareSecretKey(this.symEncAlgo, this.ephemeralKey);
 	    
 	    /*
 	     * Get the certificate that contains the public key for the public key
@@ -192,7 +190,7 @@ public class SecEncryptor extends SecBase {
 	 */
 
 	private void prepareInternal(SecretKey secretKey, X509Certificate remoteCert) throws Exception {
-    
+		
 		Cipher cipher = getCipherInstance(this.keyEncAlgo);
 	    try {
 	    	
@@ -556,7 +554,8 @@ public class SecEncryptor extends SecBase {
     }
 
     // Convert the raw key bytes into a SecretKey object of type symEncAlgo.
-
+    
+    /*
 	private static SecretKey prepareSecretKey(String symEncAlgo, byte[] rawKey) {
  
 		// Do an additional check on the keysize required by the encryption algorithm
@@ -582,7 +581,8 @@ public class SecEncryptor extends SecBase {
         return (SecretKey)keySpec;
     
 	}
-
+	*/
+    
     /*
      * Translate the "cipherAlgo" URI to a JCE ID, and return 
      * a javax.crypto.Cipher instance of this type. 

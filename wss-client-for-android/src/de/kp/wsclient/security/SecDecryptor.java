@@ -1,5 +1,11 @@
 package de.kp.wsclient.security;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.security.Key;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -8,6 +14,7 @@ import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import org.apache.xml.security.encryption.XMLCipher;
 import org.apache.xml.security.encryption.XMLEncryptionException;
+import org.apache.xml.security.utils.Base64;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -25,8 +32,7 @@ public class SecDecryptor extends SecBase {
     	org.apache.xml.security.Init.init();
     }
 
-	public SecDecryptor() {
-		
+	public SecDecryptor() {		
 	}
 	
 	// decryption is processed after the signature of 
@@ -82,8 +88,14 @@ public class SecDecryptor extends SecBase {
 
         Cipher cipher = SecUtil.getCipherInstance(encAlgo);
 
+        // initialize cipher instance with provided certificate
+        X509Certificate remoteCert = getX509Certificate();
+        if (remoteCert == null) {
+            throw new Exception("[SecDecryptor] X509 Certificate not provided.");
+        }
+
         // Now lookup CipherValue.
-        Element tmp = SecUtil.getDirectChildElement(elem, "CipherData", SecConstants.ENC_NS);
+        Element tmp = SecUtil.getDirectChildElement(encKey, "CipherData", SecConstants.ENC_NS);
         Element xencCipherValue = null;
 
         if (tmp != null) {
@@ -93,22 +105,30 @@ public class SecDecryptor extends SecBase {
         if (xencCipherValue == null) {
             throw new Exception("[SecDecryptor] Invalid security.");
         }
-	            
-        List<String> dataRefURIs = getDataRefURIs(elem);
+            
+        List<String> dataRefURIs = getDataRefURIs(encKey);
 	            
         byte[] encryptedEphemeralKey = null;
-        byte[] decryptedBytes = null;
+        byte[] ephemeralKey = null;
 	            
         try {
-            encryptedEphemeralKey = getDecodedBase64EncodedData(xencCipherValue);
-            decryptedBytes = cipher.doFinal(encryptedEphemeralKey);
+            encryptedEphemeralKey = getDecodedBase64EncodedData(xencCipherValue);            
 
+            cipher.init(Cipher.UNWRAP_MODE, remoteCert);
+            //ephemeralKey = cipher.doFinal(encryptedEphemeralKey);
+            
+            String keyAlgorithm = SecUtil.getKeyAlgorithm(encAlgo);
+            Key key = cipher.unwrap(encryptedEphemeralKey, keyAlgorithm, Cipher.SECRET_KEY);
+            
+            ephemeralKey = key.getEncoded();            
+            
+            
         } catch (IllegalStateException ex) {
             throw new Exception("[SecDecrytor] Check failed.");
 
         }
 
-        dataRefs = decryptDataRefs(dataRefURIs, decryptedBytes);
+        dataRefs = decryptDataRefs(dataRefURIs, ephemeralKey);
 		return this.xmlDoc;
 		
 	}
@@ -371,5 +391,62 @@ public class SecDecryptor extends SecBase {
             return prependFullPath(xpath, node.getParentNode());
         }
     }
+
+    private Element getBSToken() {
+
+	    NodeList nodes = this.xmlDoc.getElementsByTagNameNS(SecConstants.WSSE_NS, SecConstants.BINARY_TOKEN_LN);
+	    if (nodes.getLength() == 0) return null;
+
+		Element element = (Element) nodes.item(0);		
+        if (element.hasAttributeNS(SecConstants.WSU_NS, "Id") && SecConstants.SENDER_CERT.equals(element.getAttributeNS(SecConstants.WSU_NS, "Id")))
+        	return element;
+		
+		return null;
+		
+	}
+
+	// this method retrieves the X.509 certificate from the <wsse:BinarySecurityToken>
+	
+	private X509Certificate getX509Certificate() throws Exception {
+
+		Element bsToken = getBSToken();
+		if (bsToken == null) return null;
+		
+		String encodedData = bsToken.getFirstChild().getNodeValue();
+		byte[] decodedData;
+		
+		try {
+			decodedData = Base64.decode(encodedData);
+
+		} catch (Exception e) {
+			throw new Exception("X.509 Certificate Decoding Error.");
+		
+		}
+
+        X509Certificate cert = null;
+        InputStream is = null;
+
+        try {
+
+        	CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+
+            is = new ByteArrayInputStream(decodedData);
+        	cert = (X509Certificate)certificateFactory.generateCertificate(is);
+
+        } catch (CertificateException e) {
+        	e.printStackTrace();
+
+        } finally {
+        	if (is != null) {
+        		try {
+        			is.close();
+        		} catch (Exception e) {
+        		}
+        	}
+        }
+
+        return cert;
+        
+	}
 
 }
