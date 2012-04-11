@@ -3,7 +3,6 @@ package de.kp.wsclient.security;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.cert.X509Certificate;
 import java.security.spec.MGF1ParameterSpec;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,8 +47,7 @@ public class SecEncryptor extends SecBase {
     	org.apache.xml.security.Init.init();
     }
 
-	// User credentials
-	private X509Certificate certificate;
+	private SecCrypto crypto;
 
     // Session key used as the secret in key derivation
     private byte[] ephemeralKey;
@@ -81,12 +79,8 @@ public class SecEncryptor extends SecBase {
 	 * invoked.
 	 */
 	
-	public SecEncryptor(SecCredentialInfo credentialInfo) {		
-		this.certificate = credentialInfo.getCertificate();
-	}
-	
-	public void setCertificate(X509Certificate certificate) {
-		this.certificate = certificate;
+	public SecEncryptor(SecCrypto crypto) {		
+		this.crypto = crypto;
 	}
 
     /*
@@ -180,7 +174,7 @@ public class SecEncryptor extends SecBase {
 	     * algorithm that will encrypt the generated symmetric (session) key.
 	     */
 	    
-        prepareInternal(this.symmetricKey, this.certificate);
+        prepareInternal(this.symmetricKey);
 
 	}
 
@@ -189,7 +183,7 @@ public class SecEncryptor extends SecBase {
 	 * This method does the most work for to prepare the EncryptedKey element.
 	 */
 
-	private void prepareInternal(SecretKey secretKey, X509Certificate remoteCert) throws Exception {
+	private void prepareInternal(SecretKey secretKey) throws Exception {
 		
 		Cipher cipher = getCipherInstance(this.keyEncAlgo);
 	    try {
@@ -203,10 +197,11 @@ public class SecEncryptor extends SecBase {
 	        
 	        if (oaepParameterSpec == null) {
 	        	// this is the default way to initialize the Cipher instance
-	            cipher.init(Cipher.WRAP_MODE, remoteCert);
+	            cipher.init(Cipher.WRAP_MODE, this.crypto.getPublicKey());
 	        
 	        } else {
-	            cipher.init(Cipher.WRAP_MODE, remoteCert.getPublicKey(), oaepParameterSpec);
+	            cipher.init(Cipher.WRAP_MODE, this.crypto.getPublicKey(), oaepParameterSpec);
+
 	        }
 	    
 	    } catch (InvalidKeyException e) {
@@ -351,23 +346,7 @@ public class SecEncryptor extends SecBase {
                 encDataRef.add("#" + id);
             
             }
-                
-            /**
-             * 
-             * TODO: not sure, what this functionality is good for
-             * 
-             * if (part != (references.size() - 1)) {
-             *   
-             *	try {
-             *       this.keyInfo = new KeyInfo((Element) this.keyInfo.getElement().cloneNode(true), null);
-             *   
-             *	} catch (Exception ex) {
-             *       throw new Exception("Encryption failed.");
-             *   }
-             * 
-             * }
-             **/
-            
+           
         }
         
         return encDataRef;

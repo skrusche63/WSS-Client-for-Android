@@ -31,6 +31,7 @@ import java.util.List;
 
 import javax.xml.namespace.QName;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 public class SecDataRef {
     
@@ -68,9 +69,9 @@ public class SecDataRef {
     private boolean content;
     
     /**
-     * The protected DOM element
+     * The protected DOM node
      */
-    private Element protectedElement;
+    private Node protectedNode;
 
     /**
      * @return Id of the protected element
@@ -101,29 +102,30 @@ public class SecDataRef {
     }
     
     /**
-     * @param element The protected DOM element to set
+     * @param element The protected DOM node to set
      */
-    public void setProtectedElement(Element element) {
-        protectedElement = element;
-        String prefix = element.getPrefix();
+    public void setProtectedNode(Node node) {
+    	
+        protectedNode = node;
+        if (protectedNode.getNodeType() == Node.TEXT_NODE) return;
+        
+        Element elem = (Element)node;
+        
+        String prefix = elem.getPrefix();
         if (prefix == null) {
-            name = 
-                new QName(
-                    element.getNamespaceURI(), element.getLocalName()
-                );
+            name = new QName(elem.getNamespaceURI(), elem.getLocalName());
+        
         } else {
-            name = 
-                new QName(
-                    element.getNamespaceURI(), element.getLocalName(), prefix
-                );
+            name = new QName(elem.getNamespaceURI(), elem.getLocalName(), prefix);
+        
         }
     }
     
     /**
-     * @return the protected DOM element
+     * @return the protected DOM node
      */
-    public Element getProtectedElement() {
-        return protectedElement;
+    public Node getProtectedNode() {
+        return protectedNode;
     }
 
     /**

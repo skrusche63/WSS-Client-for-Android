@@ -15,6 +15,7 @@ import org.w3c.dom.NodeList;
 
 import de.kp.wsclient.security.SecConstants;
 import de.kp.wsclient.security.SecCredentialInfo;
+import de.kp.wsclient.security.SecCrypto;
 import de.kp.wsclient.security.SecDecryptor;
 import de.kp.wsclient.security.SecEncryptor;
 import de.kp.wsclient.security.SecSignature;
@@ -28,11 +29,6 @@ public class SOAPMessage {
 	
 	private Element header;
 	private Element body;
-	
-	// this is the first child
-	// of the body element
-	
-	private Element content;
 	
 	private String bodyId = "BE-" + UUIDGenerator.getUUID();
 	
@@ -142,23 +138,18 @@ public class SOAPMessage {
 	public void setContent(Node content) throws Exception {
 		
 		if (this.body == null) throw new Exception("Invalid SOAP Message detected (missing body).");
-		
-		Node clone = content.cloneNode(true);
-		this.body.appendChild(clone);
+		this.body.appendChild(content);
 		
 	}
+
+	// returned the first child node of the body node;
+	// in case of a decrypted xml document, the respective
+	// node is a document fragment
 	
 	public Node getContent() throws Exception {
-
-		if (this.content == null) {
-
-			if (this.body == null) throw new Exception("Invalid SOAP Message detected (missing body).");
-			return this.body.getFirstChild();
-			
-		} else {
-			return this.content;
-			
-		}
+		
+		if (this.body == null) throw new Exception("Invalid SOAP Message detected (missing body).");
+		return this.body.getFirstChild();
 
 	}
 	
@@ -177,12 +168,12 @@ public class SOAPMessage {
 	// of the SOAP message; note, that encryption
 	// MUST be invoked BEFORE signing is called
 	
-	public void encryptAndSign() throws Exception {
+	public void encryptAndSign(SecCrypto crypto) throws Exception {
 				
-		if (this.credentialInfo == null) throw new Exception("No credentials for encryption & signing provided.");
+		if (this.credentialInfo == null) throw new Exception("No credentials for signing provided.");
 
 		// encrypt
-		SecEncryptor encryptor = new SecEncryptor(this.credentialInfo);
+		SecEncryptor encryptor = new SecEncryptor(crypto);
 		this.xmlDoc = encryptor.encrypt(this.xmlDoc);
 		
 		// sign
@@ -204,7 +195,7 @@ public class SOAPMessage {
 	// SOAP message and afterwards decryption of the
 	// respective content
 	
-	public void verifyAndDecrypt() throws Exception {
+	public void verifyAndDecrypt(SecCrypto crypto) throws Exception {
 		
 		// verify signature of SOAP message
 		SecValidator validator = new SecValidator();
@@ -213,11 +204,8 @@ public class SOAPMessage {
 		// decrypt content of SOAP message (this is
 		// actually restricted to the BODY element)
 		
-		SecDecryptor decryptor = new SecDecryptor();
+		SecDecryptor decryptor = new SecDecryptor(crypto);
 		this.xmlDoc = decryptor.decrypt(this.xmlDoc);
-		
-		// retrieve decrypted content
-		this.content = decryptor.getDecryptedElement();
 		
 	}
 	

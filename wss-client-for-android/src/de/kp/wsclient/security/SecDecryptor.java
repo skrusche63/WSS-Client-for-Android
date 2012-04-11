@@ -1,11 +1,5 @@
 package de.kp.wsclient.security;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.security.Key;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -14,7 +8,6 @@ import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import org.apache.xml.security.encryption.XMLCipher;
 import org.apache.xml.security.encryption.XMLEncryptionException;
-import org.apache.xml.security.utils.Base64;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -26,13 +19,16 @@ public class SecDecryptor extends SecBase {
 
 	private Document xmlDoc;
 	private List<SecDataRef> dataRefs;
+
+	private SecCrypto crypto;
 	
 	static {
     	// initialize apache santuario framework
     	org.apache.xml.security.Init.init();
     }
 
-	public SecDecryptor() {		
+	public SecDecryptor(SecCrypto crypto) {
+		this.crypto = crypto;
 	}
 	
 	// decryption is processed after the signature of 
@@ -87,12 +83,7 @@ public class SecDecryptor extends SecBase {
         }
 
         Cipher cipher = SecUtil.getCipherInstance(encAlgo);
-
-        // initialize cipher instance with provided certificate
-        X509Certificate remoteCert = getX509Certificate();
-        if (remoteCert == null) {
-            throw new Exception("[SecDecryptor] X509 Certificate not provided.");
-        }
+        cipher.init(Cipher.UNWRAP_MODE, crypto.getPrivateKey());
 
         // Now lookup CipherValue.
         Element tmp = SecUtil.getDirectChildElement(encKey, "CipherData", SecConstants.ENC_NS);
@@ -109,18 +100,13 @@ public class SecDecryptor extends SecBase {
         List<String> dataRefURIs = getDataRefURIs(encKey);
 	            
         byte[] encryptedEphemeralKey = null;
-        byte[] ephemeralKey = null;
+        SecretKey symmetricKey = null;
 	            
         try {
             encryptedEphemeralKey = getDecodedBase64EncodedData(xencCipherValue);      
             
-            cipher.init(Cipher.UNWRAP_MODE, remoteCert);
-            //ephemeralKey = cipher.doFinal(encryptedEphemeralKey);
-            
             String keyAlgorithm = SecUtil.getKeyAlgorithm(SecConstants.AES_128);
-            Key key = cipher.unwrap(encryptedEphemeralKey, keyAlgorithm, Cipher.SECRET_KEY);
-            
-            ephemeralKey = key.getEncoded();            
+            symmetricKey = (SecretKey)cipher.unwrap(encryptedEphemeralKey, keyAlgorithm, Cipher.SECRET_KEY);
             
             
         } catch (IllegalStateException ex) {
@@ -128,23 +114,23 @@ public class SecDecryptor extends SecBase {
 
         }
 
-        dataRefs = decryptDataRefs(dataRefURIs, ephemeralKey);
+        dataRefs = decryptDataRefs(dataRefURIs, symmetricKey);
 		return this.xmlDoc;
 		
 	}
 
-	public Element getDecryptedElement() {
+	public Node getDecryptedNode() {
 		
 		if ((this.dataRefs == null) || (this.dataRefs.size() == 0)) return null;
 		SecDataRef dataRef = this.dataRefs.get(0);
 		
-		return dataRef.getProtectedElement();
+		return dataRef.getProtectedNode();
 		
 	}
 	
     // Decrypt all data references
 
-	private List<SecDataRef> decryptDataRefs(List<String> dataRefURIs, byte[] decryptedBytes) throws Exception {
+	private List<SecDataRef> decryptDataRefs(List<String> dataRefURIs, SecretKey symmetricKey) throws Exception {
 
         // At this point we have the decrypted session (symmetric) key. According
         // to W3C XML-Enc this key is used to decrypt _any_ references contained in
@@ -156,7 +142,7 @@ public class SecDecryptor extends SecBase {
         List<SecDataRef> dataRefs = new ArrayList<SecDataRef>();
         for (String dataRefURI:dataRefURIs) {
  
-        	SecDataRef dataRef = decryptDataRef(dataRefURI, decryptedBytes);
+        	SecDataRef dataRef = decryptDataRef(dataRefURI, symmetricKey);
             dataRefs.add(dataRef);
         
         }
@@ -166,22 +152,13 @@ public class SecDecryptor extends SecBase {
 
     // Decrypt an EncryptedData element referenced by dataRefURI
 
-	private SecDataRef decryptDataRef(String dataRefURI, byte[] decryptedData) throws Exception {
+	private SecDataRef decryptDataRef(String dataRefURI, SecretKey symmetricKey) throws Exception {
  
         // Find the encrypted data element referenced by dataRefURI
         Element encryptedDataElement = findEncryptedDataElement(dataRefURI);
 
         // Prepare the SecretKey object to decrypt EncryptedData
         String symEncAlgo = getEncAlgo(encryptedDataElement);
-        SecretKey symmetricKey = null;
-        
-        try {
-            symmetricKey = SecUtil.prepareSecretKey(symEncAlgo, decryptedData);
-        
-        } catch (IllegalArgumentException ex) {
-            throw new Exception("[SecDecryptor] Unsupported algorithm.");
-
-        }
 
         return decryptEncryptedData(dataRefURI, encryptedDataElement, symmetricKey, symEncAlgo);
 
@@ -262,11 +239,13 @@ public class SecDecryptor extends SecBase {
             Node soapHeader = parent.getParentNode();
             soapHeader.replaceChild(decryptedHeader, parent);
 
-            dataRef.setProtectedElement((Element)decryptedHeader);
+            dataRef.setProtectedNode(decryptedHeader);
             dataRef.setXpath(getXPath(decryptedHeader));
 
         } else if (content) {
-            dataRef.setProtectedElement(encData);
+        	
+        	// this is the default path 
+            dataRef.setProtectedNode(encData);
             dataRef.setXpath(getXPath(encData));
         
         } else {
@@ -279,10 +258,7 @@ public class SecDecryptor extends SecBase {
                 decryptedNode = previousSibling.getNextSibling();
             }
             
-            if (decryptedNode != null && Node.ELEMENT_NODE == decryptedNode.getNodeType()) {
-                dataRef.setProtectedElement((Element)decryptedNode);
-            }
-            
+            if (decryptedNode != null) dataRef.setProtectedNode(decryptedNode);            
             dataRef.setXpath(getXPath(decryptedNode));
         }
         
@@ -391,62 +367,5 @@ public class SecDecryptor extends SecBase {
             return prependFullPath(xpath, node.getParentNode());
         }
     }
-
-    private Element getBSToken() {
-
-	    NodeList nodes = this.xmlDoc.getElementsByTagNameNS(SecConstants.WSSE_NS, SecConstants.BINARY_TOKEN_LN);
-	    if (nodes.getLength() == 0) return null;
-
-		Element element = (Element) nodes.item(0);		
-        if (element.hasAttributeNS(SecConstants.WSU_NS, "Id") && SecConstants.SENDER_CERT.equals(element.getAttributeNS(SecConstants.WSU_NS, "Id")))
-        	return element;
-		
-		return null;
-		
-	}
-
-	// this method retrieves the X.509 certificate from the <wsse:BinarySecurityToken>
-	
-	private X509Certificate getX509Certificate() throws Exception {
-
-		Element bsToken = getBSToken();
-		if (bsToken == null) return null;
-		
-		String encodedData = bsToken.getFirstChild().getNodeValue();
-		byte[] decodedData;
-		
-		try {
-			decodedData = Base64.decode(encodedData);
-
-		} catch (Exception e) {
-			throw new Exception("X.509 Certificate Decoding Error.");
-		
-		}
-
-        X509Certificate cert = null;
-        InputStream is = null;
-
-        try {
-
-        	CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-
-            is = new ByteArrayInputStream(decodedData);
-        	cert = (X509Certificate)certificateFactory.generateCertificate(is);
-
-        } catch (CertificateException e) {
-        	e.printStackTrace();
-
-        } finally {
-        	if (is != null) {
-        		try {
-        			is.close();
-        		} catch (Exception e) {
-        		}
-        	}
-        }
-
-        return cert;
-        
-	}
 
 }

@@ -22,7 +22,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringReader;
 
-import javax.xml.XMLConstants;
+// import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -35,8 +35,11 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 /**
- * Converts <code>String</code>s into <code>Node</code>s and visa versa.
+ * Converts <code>String</code>s into <code>Node</code>s and visa 
+ * versa. Note, that the method::deserialize was modified as Android's
+ * DocumentBuilderFactoryImpl only supports a limited set of attributes. 
  */
+
 public class DocumentSerializer extends AbstractSerializer {
     
     protected DocumentBuilderFactory dbf;
@@ -72,11 +75,24 @@ public class DocumentSerializer extends AbstractSerializer {
     private Node deserialize(Node ctx, InputSource inputSource) throws XMLEncryptionException {
         try {
             if (dbf == null) {
-                dbf = DocumentBuilderFactory.newInstance();
+
+            	dbf = DocumentBuilderFactory.newInstance();
                 dbf.setNamespaceAware(true);
-                dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, Boolean.TRUE);
-                dbf.setAttribute("http://xml.org/sax/features/namespaces", Boolean.TRUE);
+                
+                /*
+                 * __ADAPTED__ (c) 2012 Dr. Krusche & Partner PartG
+                 * 
+                 * The Android's DocumentBuilderFactoryImpl does not support the feature
+                 * XMLConstants.FEATURE_SECURE_PROCESSING
+                 * 
+                 * In addition, setting the attribute "http://xml.org/sax/features/namespaces"
+                 * is also NOT supported for Android's DocumentBuilderFactoryImpl
+                 */
+                
+                // dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, Boolean.TRUE);
+                // dbf.setAttribute("http://xml.org/sax/features/namespaces", Boolean.TRUE);
                 dbf.setValidating(false);
+            
             }
             DocumentBuilder db = dbf.newDocumentBuilder();
             Document d = db.parse(inputSource);
