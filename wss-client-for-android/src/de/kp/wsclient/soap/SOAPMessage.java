@@ -32,14 +32,10 @@ public class SOAPMessage {
 	
 	private String bodyId = "BE-" + UUIDGenerator.getUUID();
 	
-	private SecCredentialInfo credentialInfo;
-	
 	// this constructor is used to build a new SOAP message;
 	// use case: outgoing SOAP message
 	
-	public SOAPMessage(SecCredentialInfo credentialInfo) {
-		
-		this.credentialInfo = credentialInfo;
+	public SOAPMessage() {
 		
 	    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 	    factory.setNamespaceAware(true);
@@ -155,11 +151,9 @@ public class SOAPMessage {
 	
 	// this method supports the signing of the SOAP message
 	
-	public void sign() throws Exception {
+	public void sign(SecCredentialInfo credentialInfo) throws Exception {
 		
-		if (this.credentialInfo == null) throw new Exception("No credentials for signing provided.");
-		
-		SecSignature signature = new SecSignature(this.credentialInfo);
+		SecSignature signature = new SecSignature(credentialInfo);
 		this.xmlDoc = signature.sign(this.xmlDoc);
 		
 	}
@@ -168,16 +162,14 @@ public class SOAPMessage {
 	// of the SOAP message; note, that encryption
 	// MUST be invoked BEFORE signing is called
 	
-	public void encryptAndSign(SecCrypto crypto) throws Exception {
-				
-		if (this.credentialInfo == null) throw new Exception("No credentials for signing provided.");
+	public void encryptAndSign(SecCredentialInfo credentialInfo, SecCrypto crypto) throws Exception {
 
 		// encrypt
 		SecEncryptor encryptor = new SecEncryptor(crypto);
 		this.xmlDoc = encryptor.encrypt(this.xmlDoc);
 		
 		// sign
-		SecSignature signature = new SecSignature(this.credentialInfo);
+		SecSignature signature = new SecSignature(credentialInfo);
 		this.xmlDoc = signature.sign(this.xmlDoc);
 
 	}
