@@ -6,6 +6,7 @@ import java.util.HashMap;
 import org.w3c.dom.Node;
 
 import de.kp.wsclient.security.SecConstants;
+import de.kp.wsclient.security.SecCredentialInfo;
 import de.kp.wsclient.security.SecCrypto;
 
 public class SOAPMessenger {
@@ -13,8 +14,8 @@ public class SOAPMessenger {
 	private SOAPSenderImpl soapSender;
 	private SOAPMessage resultMessage;
 	
-	public SOAPMessenger() {
-		this.soapSender = new SOAPSenderImpl();
+	public SOAPMessenger(SecCredentialInfo credentials) {
+		this.soapSender = new SOAPSenderImpl(credentials);
 	}
 	
 	public void sendRequest(SOAPMessage message, String endpoint, HashMap<String, String> params, SecCrypto crypto) throws Exception {

@@ -22,6 +22,8 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 
+import de.kp.wsclient.security.SecCredentialInfo;
+
 
 /**
  * Singleton implementation of {@link SOAPSender}, using the Apache HTTP Client
@@ -71,6 +73,13 @@ public class SOAPSenderImpl implements SOAPSender {
     /** Apache HTTP Client for making HTTP requests */
     private HttpClient httpClient = buildHttpClient();
 
+    /** user credential to provide the public key **/
+    private SecCredentialInfo credentials;
+    
+    public SOAPSenderImpl(SecCredentialInfo credentials) {
+    	this.credentials = credentials;
+    }
+    
     /**
      * {@inheritDoc}
      */

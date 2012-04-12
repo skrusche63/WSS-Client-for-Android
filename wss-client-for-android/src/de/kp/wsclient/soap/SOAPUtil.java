@@ -37,7 +37,7 @@ public class SOAPUtil {
 		SOAPMessage message = createSOAPMessage(credentialInfo);
 		message.setContent(content);
 		
-		SOAPMessenger messenger = new SOAPMessenger();
+		SOAPMessenger messenger = new SOAPMessenger(credentialInfo);
 		messenger.sendRequest(message, endpoint, params, crypto);
 		
 		return messenger.getResultContent();
