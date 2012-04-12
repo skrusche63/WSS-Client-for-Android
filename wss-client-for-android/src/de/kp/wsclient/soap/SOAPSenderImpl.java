@@ -3,6 +3,12 @@ package de.kp.wsclient.soap;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -22,8 +28,10 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 
+import android.content.Context;
 import de.kp.wsclient.security.SecCredentialInfo;
-
+import de.kp.wsclient.security.SecCryptoParam;
+import de.kp.wsclient.security.SecCryptoParams;
 
 /**
  * Singleton implementation of {@link SOAPSender}, using the Apache HTTP Client
@@ -34,168 +42,291 @@ import de.kp.wsclient.security.SecCredentialInfo;
  */
 
 /*
- * This class is an adapted version of the ApacheSOAPRequestor
- * class from the icesoap project from Alex Gillerian
+ * This class is an adapted version of the ApacheSOAPRequestor class from the
+ * icesoap project from Alex Gillerian
  */
 
 public class SOAPSenderImpl implements SOAPSender {
 
 	/** Soap action to use if none is specified. */
-    private static final String BLANK_SOAP_ACTION = "";
+	private static final String BLANK_SOAP_ACTION = "";
 
-    /** Port for HTTPS communication */
-    private static final int DEFAULT_HTTPS_PORT = 443;
+	/** Port for HTTPS communication */
+	private static final int DEFAULT_HTTPS_PORT = 443;
 
-    /** Port for HTTP communication */
-    private static final int DEFAULT_HTTP_PORT = 80;
+	/** Port for HTTP communication */
+	private static final int DEFAULT_HTTP_PORT = 80;
 
-    /** Name of HTTPS */
-    private static final String HTTPS_NAME = "https";
+	/** Default Andoid Keystore Type */
+	private static final String DEFAULT_KEYSTORE_TYPE = "BKS";
 
-    /** Name of HTTP */
-    private static final String HTTP_NAME = "http";
+	/** Name of HTTPS */
+	private static final String HTTPS_NAME = "https";
 
-    /** HTTP content type submitted in HTTP POST request for SOAP calls */
-    private static final String XML_CONTENT_TYPE = "text/xml; charset=UTF-8";
+	/** Name of HTTP */
+	private static final String HTTP_NAME = "http";
 
-    /** Label for content-type header */
-    private static final String CONTENT_TYPE_LABEL = "Content-type";
+	/** HTTP content type submitted in HTTP POST request for SOAP calls */
+	private static final String XML_CONTENT_TYPE = "text/xml; charset=UTF-8";
 
-    /** Key for SOAP action header */
-    private static final String HEADER_KEY_SOAP_ACTION = "SOAPAction";
+	/** Label for content-type header */
+	private static final String CONTENT_TYPE_LABEL = "Content-type";
 
-    /** Timeout for making a connection */
-    private static final int DEFAULT_CONN_TIMEOUT = 5000;
-        
-    /** Timeout for recieving data */
-    private static final int DEFAULT_SOCKET_TIMEOUT = 20000;
+	/** Key for SOAP action header */
+	private static final String HEADER_KEY_SOAP_ACTION = "SOAPAction";
 
-    /** Apache HTTP Client for making HTTP requests */
-    private HttpClient httpClient = buildHttpClient();
+	/** Timeout for making a connection */
+	private static final int DEFAULT_CONN_TIMEOUT = 5000;
 
-    /** user credential to provide the public key **/
-    private SecCredentialInfo credentials;
-    
-    public SOAPSenderImpl(SecCredentialInfo credentials) {
-    	this.credentials = credentials;
-    }
-    
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public SOAPResponse doSoapRequest(SOAPMessage message, String targetUrl) throws IOException {
-        return doSoapRequest(message, targetUrl, BLANK_SOAP_ACTION);
-    }
+	/** Timeout for recieving data */
+	private static final int DEFAULT_SOCKET_TIMEOUT = 20000;
 
-    /**
-     * {@inheritDoc}
-     */
-    public SOAPResponse doSoapRequest(SOAPMessage message, String url, String soapAction) throws IOException {
-        return doHttpPost(buildPostRequest(url, message.toXML(), soapAction));
-    }
+	/** Apache HTTP Client for making HTTP requests */
+	private HttpClient httpClient = null; // buildHttpClient();
 
-    /**
-     * Performs an HTTP POST request
-     * 
-     * @param httpPost
-     *            The {@link HttpPost} to perform.
-     * @return An {@link InputStream} of the response.
-     * @throws ClientProtocolException
-     * @throws IOException
-     * @throws SOAPException
-         */
-        
-    private SOAPResponse doHttpPost(HttpPost httpPost) throws ClientProtocolException, IOException {
+	/** Android client application resource access */
+	private KeyStore keyStore;
+	private KeyStore trustStore;
+	private Context context;
 
-        // Execute HTTP Post Request
-        HttpResponse response = httpClient.execute(httpPost);
-        HttpEntity res = new BufferedHttpEntity(response.getEntity());
+	private SecCryptoParam trustStoreParam;
+	private SecCryptoParam keyStoreParam;
 
-        return new SOAPResponse(res.getContent(), response.getStatusLine().getStatusCode());
-        
-    }
+	public SOAPSenderImpl() {
+		this(null);
+	}	
+	
+	public SOAPSenderImpl(Context context) {
+		this.context = context;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @throws Exception 
+	 */
+	@Override
+	public SOAPResponse doSoapRequest(SOAPMessage message, String targetUrl) throws Exception {
+		return doSoapRequest(message, targetUrl, BLANK_SOAP_ACTION);
+	}
 
-    /**
-     * Builds an Apache {@link HttpClient} from defaults.
-     * 
-     * @return An implementation of {@link HttpClient}
-     */
-    private HttpClient buildHttpClient() {
-    	
-        HttpParams httpParameters = new BasicHttpParams();
-        HttpConnectionParams.setConnectionTimeout(httpParameters, DEFAULT_CONN_TIMEOUT);
-        
-        HttpConnectionParams.setSoTimeout(httpParameters, DEFAULT_SOCKET_TIMEOUT);
-        SchemeRegistry schemeRegistry = getSchemeRegistry();
+	/**
+	 * {@inheritDoc}
+	 * @throws Exception 
+	 */
+	public SOAPResponse doSoapRequest(SOAPMessage message, String url, String soapAction) throws Exception {
+		return doHttpPost(buildPostRequest(url, message.toXML(), soapAction));
+	}
 
-        ThreadSafeClientConnManager cm = new ThreadSafeClientConnManager(httpParameters, schemeRegistry);
-        return new DefaultHttpClient(cm, httpParameters);
-            
-    }
+	/**
+	 * Performs an HTTP POST request
+	 * 
+	 * @param httpPost
+	 *            The {@link HttpPost} to perform.
+	 * @return An {@link InputStream} of the response.
+	 * @throws Exception 
+	 * @throws SOAPException
+	 */
 
-    /**
-     * Builds a {@link SchemeRegistry}, which determines the
-     * {@link SocketFactory} that will be used for different ports.
-     * 
-     * This is very important because it will need to be overridden by an
-     * extension class if custom ports or factories (which are used for
-     * self-signed certificates) are to be used.
-     * 
-     * @return A {@link SchemeRegistry} with the necessary port and factories
-     *         registered.
-     */
-    protected SchemeRegistry getSchemeRegistry() {
+	private SOAPResponse doHttpPost(HttpPost httpPost) throws Exception {
 
-    	SchemeRegistry schemeRegistry = new SchemeRegistry();
+		// lazy initialization
+		if (httpClient == null)
+			httpClient = buildHttpClient();
 
-        schemeRegistry.register(new Scheme(HTTP_NAME, PlainSocketFactory.getSocketFactory(), DEFAULT_HTTP_PORT));
-        schemeRegistry.register(new Scheme(HTTPS_NAME, SSLSocketFactory.getSocketFactory(), DEFAULT_HTTPS_PORT));
+		// Execute HTTP Post Request
+		HttpResponse response = httpClient.execute(httpPost);
+		HttpEntity res = new BufferedHttpEntity(response.getEntity());
 
-        return schemeRegistry;
-        
-    }
+		return new SOAPResponse(res.getContent(), response.getStatusLine().getStatusCode());
 
-    /**
-     * Builds an {@link HttpPost} request.
-     * 
-     * @param url
-     *            the URL to POST to
-     * @param envelopeString
-     *            The envelope to post, as a serialized string.
-     * @param soapAction
-     *            SOAPAction for the header.
-     * @return An {@link HttpPost} object representing the supplied information.
-     * @throws UnsupportedEncodingException
-     */
-    private HttpPost buildPostRequest(String url, String envelopeString, String soapAction) throws UnsupportedEncodingException {
- 
-    	// Create a new HttpClient and Post Header
-        HttpPost httppost = new HttpPost(url);
+	}
 
-        httppost.setHeader(CONTENT_TYPE_LABEL, XML_CONTENT_TYPE);
-        httppost.setHeader(HEADER_KEY_SOAP_ACTION, soapAction);
+	/**
+	 * Lazy initialization of Android context for resource accessing
+	 * 
+	 * @param keyStoreParam
+	 * @param trustStoreParam
+	 * @throws Exception
+	 */
+	public void init(SecCryptoParams cryptoParams)
+			throws Exception {
+		
+		keyStoreParam = cryptoParams.get(SecCryptoParams.KEYSTORE);
+		trustStoreParam = cryptoParams.get(SecCryptoParams.TRUSTSTORE);
+		
+		loadKeyStore();
+		loadTrustStore();
+		
+	}
 
-        HttpEntity entity = new StringEntity(envelopeString);
+	protected void loadKeyStore() throws Exception {
+		
+		
+		// initialize trust manager factory with the read truststore
+		// TrustManagerFactory trustManagerFactory = null;
+		// trustManagerFactory =
+		// TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+		// trustManagerFactory.init(trustStore);
 
-        httppost.setEntity(entity);
-        return httppost;
-    
-    }
+		//
+		// setup client certificate
+		//
+		InputStream keyStoreStream = context.getResources().openRawResource(keyStoreParam.getResource());
+		keyStore = KeyStore.getInstance(keyStoreParam.getType());
+		try {
+			keyStore.load(keyStoreStream, keyStoreParam.getPassword().toCharArray());
+		} finally {
+			keyStoreStream.close();
+		}
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setConnectionTimeout(int timeout) {
-        HttpConnectionParams.setConnectionTimeout(httpClient.getParams(), timeout);
-    }
+		System.out.println("Loaded client certificates: " + keyStore.size());
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setSocketTimeout(int timeout) {
-        HttpConnectionParams.setSoTimeout(httpClient.getParams(), timeout);
-    }
+		// initialize key manager factory with the read client certificate
+		// KeyManagerFactory keyManagerFactory = null;
+		// keyManagerFactory =
+		// KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+		// keyManagerFactory.init(keyStore, "xregistry".toCharArray());
+	}
+
+	protected void loadTrustStore() throws Exception {
+		//
+		// load truststore certificate
+		//
+
+		// setup truststore to provide trust for the server certificate
+		// xxx pa: need to build the BouncyCastle keystore here
+
+		// Get the raw resource, which contains the keystore with
+		// your trusted certificates (root and any intermediate certs)
+		InputStream trustStoreStream = context.getResources().openRawResource(trustStoreParam.getResource());
+
+		// Get an instance of the Bouncy Castle KeyStore format
+		trustStore = KeyStore.getInstance(trustStoreParam.getType());
+		try {
+			// Initialize the keystore with the provided trusted certificates
+			// Also provide the password of the keystore
+			trustStore.load(trustStoreStream, trustStoreParam.getPassword().toCharArray());
+		} finally {
+			trustStoreStream.close();
+		}
+
+		System.out.println("Loaded server certificates: " + trustStore.size());
+	}
+
+	/**
+	 * Builds an Apache {@link HttpClient} from defaults.
+	 * 
+	 * @return An implementation of {@link HttpClient}
+	 * @throws Exception 
+	 */
+	private HttpClient buildHttpClient() throws Exception {
+
+		HttpParams httpParameters = new BasicHttpParams();
+		HttpConnectionParams.setConnectionTimeout(httpParameters, DEFAULT_CONN_TIMEOUT);
+
+		HttpConnectionParams.setSoTimeout(httpParameters, DEFAULT_SOCKET_TIMEOUT);
+		SchemeRegistry schemeRegistry = getSchemeRegistry();
+
+		ThreadSafeClientConnManager cm = new ThreadSafeClientConnManager(httpParameters, schemeRegistry);
+		return new DefaultHttpClient(cm, httpParameters);
+
+	}
+
+	/**
+	 * Builds a {@link SchemeRegistry}, which determines the
+	 * {@link SocketFactory} that will be used for different ports.
+	 * 
+	 * This is very important because it will need to be overridden by an
+	 * extension class if custom ports or factories (which are used for
+	 * self-signed certificates) are to be used.
+	 * 
+	 * @return A {@link SchemeRegistry} with the necessary port and factories
+	 *         registered.
+	 * @throws Exception 
+	 */
+	protected SchemeRegistry getSchemeRegistry() throws Exception {
+
+		SchemeRegistry schemeRegistry = new SchemeRegistry();
+
+		schemeRegistry.register(new Scheme(HTTP_NAME, PlainSocketFactory.getSocketFactory(), DEFAULT_HTTP_PORT));
+		schemeRegistry.register(new Scheme(HTTPS_NAME, CertClientSslSocketFactory(), DEFAULT_HTTPS_PORT));
+
+		return schemeRegistry;
+
+	}
+
+	/**
+	 * Initializes a SSLSocketFactory ready for mutual authentication via https CLIENT-CERT 
+	 * 
+	 * @return
+	 * @throws Exception 
+	 */
+	private SSLSocketFactory CertClientSslSocketFactory() throws Exception {
+			/*
+			 Pass the keystore to the SSLSocketFactory. The factory is
+			 responsible
+			 for the verification of the server certificate.
+			 */
+		
+			if ((keyStore == null) || (trustStore == null))
+				throw new Exception("[SOAPSenderImpl] keystore initialization missing");
+			
+			SSLSocketFactory socketFactory = new SSLSocketFactory(SSLSocketFactory.TLS, // String algorithm
+					keyStore, // KeyStore keystore
+					keyStoreParam.getPassword(), // String keystorePassword
+					trustStore, // KeyStore truststore
+					null, // SecureRandom random
+					null // HostNameResolver nameResolver
+			);
+
+			// Hostname verification from certificate
+			// http://hc.apache.org/httpcomponents-client-ga/tutorial/html/connmgmt.html#d4e506
+			socketFactory.setHostnameVerifier(SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER); // .STRICT_HOSTNAME_VERIFIER);
+			return socketFactory;
+			
+	}
+
+	/**
+	 * Builds an {@link HttpPost} request.
+	 * 
+	 * @param url
+	 *            the URL to POST to
+	 * @param envelopeString
+	 *            The envelope to post, as a serialized string.
+	 * @param soapAction
+	 *            SOAPAction for the header.
+	 * @return An {@link HttpPost} object representing the supplied information.
+	 * @throws UnsupportedEncodingException
+	 */
+	private HttpPost buildPostRequest(String url, String envelopeString, String soapAction)
+			throws UnsupportedEncodingException {
+
+		// Create a new HttpClient and Post Header
+		HttpPost httppost = new HttpPost(url);
+
+		httppost.setHeader(CONTENT_TYPE_LABEL, XML_CONTENT_TYPE);
+		httppost.setHeader(HEADER_KEY_SOAP_ACTION, soapAction);
+
+		HttpEntity entity = new StringEntity(envelopeString);
+
+		httppost.setEntity(entity);
+		return httppost;
+
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void setConnectionTimeout(int timeout) {
+		HttpConnectionParams.setConnectionTimeout(httpClient.getParams(), timeout);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void setSocketTimeout(int timeout) {
+		HttpConnectionParams.setSoTimeout(httpClient.getParams(), timeout);
+	}
 }

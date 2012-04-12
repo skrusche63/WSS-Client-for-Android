@@ -1,40 +1,44 @@
 package de.kp.wsclient.soap;
 
 import java.io.InputStream;
-import java.util.HashMap;
 
 import org.w3c.dom.Node;
 
-import de.kp.wsclient.security.SecConstants;
-import de.kp.wsclient.security.SecCredentialInfo;
-import de.kp.wsclient.security.SecCrypto;
+import de.kp.wsclient.security.SecCryptoParam;
+import de.kp.wsclient.security.SecCryptoParams;
 
 public class SOAPMessenger {
 
 	private SOAPSenderImpl soapSender;
 	private SOAPMessage resultMessage;
+	private boolean initialized;
 	
-	public SOAPMessenger(SecCredentialInfo credentials) {
-		this.soapSender = new SOAPSenderImpl(credentials);
+	private static SOAPMessenger instance = new SOAPMessenger();
+	
+	private SOAPMessenger() {}
+	
+	public static SOAPMessenger getInstance() {
+		if (instance == null) instance = new SOAPMessenger();
+		return instance;
 	}
 	
-	public void sendRequest(SOAPMessage message, String endpoint, HashMap<String, String> params, SecCrypto crypto) throws Exception {
-
-		if (params.containsKey(SecConstants.REQ_SIGN) && params.get(SecConstants.REQ_SIGN).equals("yes")) {
-			// security is restricted to message integrity 
-			message.sign();
-			
-		} else if (params.containsKey(SecConstants.REQ_ENCRYPT_SIGN) && params.get(SecConstants.REQ_ENCRYPT_SIGN).equals("yes")) {
-			// security comprises message integrity & confidentiality
-			if (crypto == null) throw new Exception("[SOAPMessenger] No crypto information provided.");
-			message.encryptAndSign(crypto);
-			
+	public void init(SecCryptoParams cryptoParams) throws Exception {
+		if (initialized == false) {
+			this.soapSender = new SOAPSenderImpl();
+			this.soapSender.init(cryptoParams);
 		}
 		
-		SOAPResponse soapResponse = null;
+		initialized = true;
+	}
+	
+	public SOAPMessage sendRequest(SOAPMessage message, String endpoint) throws Exception {
+		if (initialized == false)
+			throw new Exception("[SOAPMessenger] Is not initialized");
+
+		SOAPMessage responseMessage = null;
 			
 		// send SOAP message to web service identified by its url
-		soapResponse = this.soapSender.doSoapRequest(message, endpoint);
+		SOAPResponse soapResponse = this.soapSender.doSoapRequest(message, endpoint);
 		
 		int httpStatus = soapResponse.getHttpStatus();
 		if (httpStatus == 200) {
@@ -42,21 +46,12 @@ public class SOAPMessenger {
 			InputStream data = soapResponse.getData();
 			if (data == null) throw new Exception("No response data retrieved.");
 			
-			resultMessage = new SOAPMessage(data);
+			responseMessage = new SOAPMessage(data);
 
-			if (params.containsKey(SecConstants.RES_VERIFY) && params.get(SecConstants.RES_VERIFY).equals("yes")) {
-				// verify signature of incomig SOAP response message
-				resultMessage.verify();
-				
-			} else if (params.containsKey(SecConstants.RES_DECRYPT_VERIFY) && params.get(SecConstants.RES_DECRYPT_VERIFY).equals("yes")) {
-				// verify and decrypt incoming SOAP response message
-				if (crypto == null) throw new Exception("[SOAPMessenger] No crypto information provided.");
-				resultMessage.verifyAndDecrypt(crypto);
-
-			}
 			
 		}
 		
+		return responseMessage;
 	}
 
 	public Node getResultContent() throws Exception {

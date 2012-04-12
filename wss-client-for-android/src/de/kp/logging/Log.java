@@ -4,7 +4,8 @@ public class Log {
 
 	 private String tag;
 	 
-	 private boolean debugEnabled = false;
+	 // xxx pa 120410 force debug
+	 private boolean debugEnabled = true;
 	 
 	 public Log(Class<?> clazz) {		 
 		 this.tag = clazz.getSimpleName();	 

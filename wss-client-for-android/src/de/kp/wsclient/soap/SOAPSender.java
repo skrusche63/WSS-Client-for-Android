@@ -24,9 +24,9 @@ public interface SOAPSender {
      * @param targetUrl
      *            The url of the SOAP web service to communicate with.
      * @return An InputStream representing the
-     * @throws IOException
+     * @throws Exception 
      */
-    public SOAPResponse doSoapRequest(SOAPMessage message, String targetUrl) throws IOException;
+    public SOAPResponse doSoapRequest(SOAPMessage message, String targetUrl) throws Exception;
 
     /**
      * Performs a SOAP request
@@ -39,9 +39,9 @@ public interface SOAPSender {
      *            The SOAP Action to perform - this is put in the
      *            <code>SOAPAction</code> field of the outgoing HTTP post.
      * @return An InputStream representing the
-     * @throws IOException
+     * @throws Exception 
      */
-    public SOAPResponse doSoapRequest(SOAPMessage message, String targetUrl, String soapAction) throws IOException;
+    public SOAPResponse doSoapRequest(SOAPMessage message, String targetUrl, String soapAction) throws Exception;
 
     /**
      * Set the timeout for making connections to the server.
