@@ -3,6 +3,9 @@ package de.kp.wsclient.security.test;
 import java.security.PrivateKey;
 import java.util.Arrays;
 
+/**
+ * This class is used as an overall cache for testing.
+ */
 public class TestContext {
 
 	private static TestContext instance = new TestContext();

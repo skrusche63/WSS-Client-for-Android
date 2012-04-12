@@ -1,10 +1,13 @@
 package de.kp.wsclient.soap;
 
+import java.util.HashMap;
+
 import org.w3c.dom.Node;
 
 import android.content.Context;
 
 import de.kp.wsclient.security.SecCredentialInfo;
+import de.kp.wsclient.security.SecCrypto;
 
 public class SOAPUtil {
 
@@ -29,13 +32,13 @@ public class SOAPUtil {
 		
 	}
 
-	public static Node sendSOAPMessage(SecCredentialInfo credentialInfo, Node content, String endpoint) throws Exception {
+	public static Node sendSOAPMessage(SecCredentialInfo credentialInfo, Node content, String endpoint, HashMap<String,String> params, SecCrypto crypto) throws Exception {
 
 		SOAPMessage message = createSOAPMessage(credentialInfo);
 		message.setContent(content);
 		
 		SOAPMessenger messenger = new SOAPMessenger();
-		messenger.sendRequest(message, endpoint);
+		messenger.sendRequest(message, endpoint, params, crypto);
 		
 		return messenger.getResultContent();
 		

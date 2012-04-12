@@ -2,6 +2,13 @@ package de.kp.wsclient.security;
 
 public class SecConstants {
 
+	// request parameters
+	
+	public static String REQ_SIGN 		  	= "reqSign";
+	public static String REQ_ENCRYPT_SIGN 	= "reqEncryptSign";
+	public static String RES_VERIFY       	= "resVerify";
+	public static String RES_DECRYPT_VERIFY = "resDecryptVerify";
+	
     // namespaces	
 	
 	/*
