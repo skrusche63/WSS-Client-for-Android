@@ -2,6 +2,8 @@ package de.kp.wsclient.soap;
 
 import java.io.InputStream;
 
+import android.content.Context;
+
 import de.kp.wsclient.security.SecCryptoParams;
 
 public class SOAPMessenger {
@@ -18,13 +20,13 @@ public class SOAPMessenger {
 		return instance;
 	}
 	
-	public void init(SecCryptoParams cryptoParams) throws Exception {
+	public void init(Context context, SecCryptoParams cryptoParams) throws Exception {
 
 		/*
 		 * The SOAPSenderImpl is initialized only once
 		 */
 		if (initialized == false) {
-			this.soapSender = new SOAPSenderImpl();
+			this.soapSender = new SOAPSenderImpl(context);
 			this.soapSender.init(cryptoParams);
 		}
 		

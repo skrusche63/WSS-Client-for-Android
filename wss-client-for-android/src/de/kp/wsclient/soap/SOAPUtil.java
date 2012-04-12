@@ -2,6 +2,8 @@ package de.kp.wsclient.soap;
 
 import java.util.HashMap;
 
+import android.content.Context;
+
 import de.kp.wsclient.security.SecConstants;
 import de.kp.wsclient.security.SecCredentialInfo;
 import de.kp.wsclient.security.SecCrypto;
@@ -45,11 +47,11 @@ public class SOAPUtil {
 		return message;
 	}
 	
-	public static SOAPMessage sendSOAPMessage(SOAPMessage message, String endpoint, SecCryptoParams cryptoParams) throws Exception {
+	public static SOAPMessage sendSOAPMessage(Context context, SOAPMessage message, String endpoint, SecCryptoParams cryptoParams) throws Exception {
 		
 		SOAPMessenger messenger = SOAPMessenger.getInstance();
 		// the messenger is initialized only once
-		messenger.init(cryptoParams);
+		messenger.init(context, cryptoParams);
 
 		return messenger.sendRequest(message, endpoint);
 		
