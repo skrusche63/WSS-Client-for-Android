@@ -1,18 +1,10 @@
 package de.kp.wsclient.soap;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.security.KeyManagementException;
 import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateException;
-
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.scheme.PlainSocketFactory;
@@ -29,21 +21,20 @@ import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 
 import android.content.Context;
-import de.kp.wsclient.security.SecCredentialInfo;
 import de.kp.wsclient.security.SecCryptoParam;
 import de.kp.wsclient.security.SecCryptoParams;
 
 /**
- * Singleton implementation of {@link SOAPSender}, using the Apache HTTP Client
+ * Implementation of {@link SOAPSender}, using the Apache HTTP Client
+ *
+ * This class is an adapted version of the ApacheSOAPRequestor class 
+ * from the icesoap project from Alex Gillerian
  * 
  * @author Alex Gilleran
- * @author Stefan Krusche (krusche@dr-kruscheundpartner.de)
  * 
- */
-
-/*
- * This class is an adapted version of the ApacheSOAPRequestor class from the
- * icesoap project from Alex Gillerian
+ * @author Stefan Krusche (krusche@dr-kruscheundpartner.de)
+ * @author Peter Arwanitis (arwanitis@dr-kruscheundpartner.de)
+ * 
  */
 
 public class SOAPSenderImpl implements SOAPSender {
@@ -56,9 +47,6 @@ public class SOAPSenderImpl implements SOAPSender {
 
 	/** Port for HTTP communication */
 	private static final int DEFAULT_HTTP_PORT = 80;
-
-	/** Default Andoid Keystore Type */
-	private static final String DEFAULT_KEYSTORE_TYPE = "BKS";
 
 	/** Name of HTTPS */
 	private static final String HTTPS_NAME = "https";
@@ -82,11 +70,12 @@ public class SOAPSenderImpl implements SOAPSender {
 	private static final int DEFAULT_SOCKET_TIMEOUT = 20000;
 
 	/** Apache HTTP Client for making HTTP requests */
-	private HttpClient httpClient = null; // buildHttpClient();
+	private HttpClient httpClient = null;
 
-	/** Android client application resource access */
+	/** reference to keystore and truststore */
 	private KeyStore keyStore;
 	private KeyStore trustStore;
+
 	private Context context;
 
 	private SecCryptoParam trustStoreParam;
@@ -148,10 +137,10 @@ public class SOAPSenderImpl implements SOAPSender {
 	 * @param trustStoreParam
 	 * @throws Exception
 	 */
-	public void init(SecCryptoParams cryptoParams)
-			throws Exception {
+	public void init(SecCryptoParams cryptoParams) throws Exception {
 		
-		keyStoreParam = cryptoParams.get(SecCryptoParams.KEYSTORE);
+		// the key- and truststore params are registered for later use
+		keyStoreParam   = cryptoParams.get(SecCryptoParams.KEYSTORE);
 		trustStoreParam = cryptoParams.get(SecCryptoParams.TRUSTSTORE);
 		
 		loadKeyStore();
@@ -160,57 +149,31 @@ public class SOAPSenderImpl implements SOAPSender {
 	}
 
 	protected void loadKeyStore() throws Exception {
-		
-		
-		// initialize trust manager factory with the read truststore
-		// TrustManagerFactory trustManagerFactory = null;
-		// trustManagerFactory =
-		// TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-		// trustManagerFactory.init(trustStore);
 
-		//
-		// setup client certificate
-		//
 		InputStream keyStoreStream = context.getResources().openRawResource(keyStoreParam.getResource());
 		keyStore = KeyStore.getInstance(keyStoreParam.getType());
+
 		try {
 			keyStore.load(keyStoreStream, keyStoreParam.getPassword().toCharArray());
+		
 		} finally {
 			keyStoreStream.close();
 		}
 
-		System.out.println("Loaded client certificates: " + keyStore.size());
-
-		// initialize key manager factory with the read client certificate
-		// KeyManagerFactory keyManagerFactory = null;
-		// keyManagerFactory =
-		// KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-		// keyManagerFactory.init(keyStore, "xregistry".toCharArray());
 	}
 
 	protected void loadTrustStore() throws Exception {
-		//
-		// load truststore certificate
-		//
 
-		// setup truststore to provide trust for the server certificate
-		// xxx pa: need to build the BouncyCastle keystore here
-
-		// Get the raw resource, which contains the keystore with
-		// your trusted certificates (root and any intermediate certs)
 		InputStream trustStoreStream = context.getResources().openRawResource(trustStoreParam.getResource());
-
-		// Get an instance of the Bouncy Castle KeyStore format
 		trustStore = KeyStore.getInstance(trustStoreParam.getType());
+
 		try {
-			// Initialize the keystore with the provided trusted certificates
-			// Also provide the password of the keystore
 			trustStore.load(trustStoreStream, trustStoreParam.getPassword().toCharArray());
+
 		} finally {
 			trustStoreStream.close();
 		}
 
-		System.out.println("Loaded server certificates: " + trustStore.size());
 	}
 
 	/**
@@ -262,27 +225,27 @@ public class SOAPSenderImpl implements SOAPSender {
 	 * @throws Exception 
 	 */
 	private SSLSocketFactory CertClientSslSocketFactory() throws Exception {
-			/*
-			 Pass the keystore to the SSLSocketFactory. The factory is
-			 responsible
-			 for the verification of the server certificate.
-			 */
+		/*
+		 Pass the keystore to the SSLSocketFactory. The factory is
+		 responsible
+		 for the verification of the server certificate.
+		 */
+	
+		if ((keyStore == null) || (trustStore == null))
+			throw new Exception("[SOAPSenderImpl] keystore initialization missing");
 		
-			if ((keyStore == null) || (trustStore == null))
-				throw new Exception("[SOAPSenderImpl] keystore initialization missing");
-			
-			SSLSocketFactory socketFactory = new SSLSocketFactory(SSLSocketFactory.TLS, // String algorithm
-					keyStore, // KeyStore keystore
-					keyStoreParam.getPassword(), // String keystorePassword
-					trustStore, // KeyStore truststore
-					null, // SecureRandom random
-					null // HostNameResolver nameResolver
-			);
+		SSLSocketFactory socketFactory = new SSLSocketFactory(SSLSocketFactory.TLS, // String algorithm
+				keyStore, 					 // KeyStore keystore
+				keyStoreParam.getPassword(), // String keystorePassword
+				trustStore, 				 // KeyStore truststore
+				null, 						 // SecureRandom random
+				null 						 // HostNameResolver nameResolver
+		);
 
-			// Hostname verification from certificate
-			// http://hc.apache.org/httpcomponents-client-ga/tutorial/html/connmgmt.html#d4e506
-			socketFactory.setHostnameVerifier(SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER); // .STRICT_HOSTNAME_VERIFIER);
-			return socketFactory;
+		// Hostname verification from certificate
+		// http://hc.apache.org/httpcomponents-client-ga/tutorial/html/connmgmt.html#d4e506
+		socketFactory.setHostnameVerifier(SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER); // .STRICT_HOSTNAME_VERIFIER);
+		return socketFactory;
 			
 	}
 

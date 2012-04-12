@@ -59,7 +59,9 @@ public class SOAPUtil {
 	public static SOAPMessage sendSOAPMessage(SOAPMessage message, String endpoint, SecCryptoParams cryptoParams) throws Exception {
 		
 		SOAPMessenger messenger = SOAPMessenger.getInstance();
+		// the messenger is initialized only once
 		messenger.init(cryptoParams);
+
 		return messenger.sendRequest(message, endpoint);
 		
 	}

@@ -2,15 +2,11 @@ package de.kp.wsclient.soap;
 
 import java.io.InputStream;
 
-import org.w3c.dom.Node;
-
-import de.kp.wsclient.security.SecCryptoParam;
 import de.kp.wsclient.security.SecCryptoParams;
 
 public class SOAPMessenger {
 
 	private SOAPSenderImpl soapSender;
-	private SOAPMessage resultMessage;
 	private boolean initialized;
 	
 	private static SOAPMessenger instance = new SOAPMessenger();
@@ -23,6 +19,10 @@ public class SOAPMessenger {
 	}
 	
 	public void init(SecCryptoParams cryptoParams) throws Exception {
+
+		/*
+		 * The SOAPSenderImpl is initialized only once
+		 */
 		if (initialized == false) {
 			this.soapSender = new SOAPSenderImpl();
 			this.soapSender.init(cryptoParams);
@@ -32,6 +32,7 @@ public class SOAPMessenger {
 	}
 	
 	public SOAPMessage sendRequest(SOAPMessage message, String endpoint) throws Exception {
+
 		if (initialized == false)
 			throw new Exception("[SOAPMessenger] Is not initialized");
 
@@ -52,13 +53,6 @@ public class SOAPMessenger {
 		}
 		
 		return responseMessage;
-	}
-
-	public Node getResultContent() throws Exception {
-		
-		if (this.resultMessage == null) throw new Exception("No result message retrieved.");
-		return this.resultMessage.getContent();
-	
 	}
 	
 }
