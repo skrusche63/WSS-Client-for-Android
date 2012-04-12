@@ -19,11 +19,8 @@ import org.apache.xml.security.encryption.EncryptedData;
 import org.apache.xml.security.encryption.XMLCipher;
 import org.apache.xml.security.encryption.XMLEncryptionException;
 import org.apache.xml.security.keys.KeyInfo;
-import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
 import org.w3c.dom.Text;
 
 import de.kp.wsclient.util.UUIDGenerator;
@@ -48,17 +45,15 @@ public class SecEncryptor extends SecBase {
     }
 
 	private SecCrypto crypto;
-
-    // Session key used as the secret in key derivation
-    private byte[] ephemeralKey;
     
     // Symmetric key used in the EncryptedKey.
     private SecretKey symmetricKey = null;
 
-    // Encrypted bytes of the ephemeral key
-    private byte[] encryptedEphemeralKey;
+    // Encrypted bytes of the symmetric key
+    private byte[] encryptedSymmetricKey;
 
-    // DEFAULT Algorithm used to encrypt the ephemeral key
+    // DEFAULT Algorithm used to encrypt the symmetric key;
+    // as an alternative, also KEYTRANSPORT_RSAOEP is supported
     private String keyEncAlgo = SecConstants.KEYTRANSPORT_RSA15;
     
     // DEFAULT Algorithm to be used with the ephemeral key.
@@ -72,22 +67,30 @@ public class SecEncryptor extends SecBase {
 
     private KeyInfo keyInfo;
     private Document xmlDoc;
-    
-	/*
-	 * This class encrypts a WS-Security envelope; note, that
-	 * encryption MUST be done before signing the envelope is
-	 * invoked.
-	 */
 	
+    /**
+     * Constructor SecEncryptor
+     * @param crypto
+     */
 	public SecEncryptor(SecCrypto crypto) {		
 		this.crypto = crypto;
 	}
 
-    /*
-     * builds the SOAP envelope with encrypted Body and adds encrypted 
-     * key; this method is an adapted version of the WSS4j build method
-     */
 
+	/**
+     * This method builds the SOAP envelope with encrypted Body and adds 
+     * encrypted key; this method is an adapted version of the WSS4j build 
+     * method
+	 *
+	 * @param xmlDoc (SOAP envelope)
+	 * @return
+	 * @throws Exception
+	 */
+	/**
+	 * @param xmlDoc
+	 * @return
+	 * @throws Exception
+	 */
 	public Document encrypt(Document xmlDoc) throws Exception {
 		
 		// set reference to xml document as this is used
@@ -98,7 +101,7 @@ public class SecEncryptor extends SecBase {
 		Element soapHeader = getSOAPHeader(xmlDoc);
 		if (soapHeader == null) throw new Exception("SOAP Header not found.");
 
-		prepare();
+		buildEncKeyElement();
 	        
         Element envelope = xmlDoc.getDocumentElement();
         List<SecEncPart> parts = new ArrayList<SecEncPart>();
@@ -147,43 +150,28 @@ public class SecEncryptor extends SecBase {
         
     }
 
-	private void prepare() throws Exception {
+	/**
+	 * This method generates the symmetric key and also its
+	 * encrypted version; to this end, the public key of the
+	 * receiver of the SOAP message is used.
+	 * 
+	 * In addition the <xenc:EncryptedKey> element is built
+	 * and added to the <wsse:Security> header
+	 * 
+	 * @throws Exception
+	 */
+	private void buildEncKeyElement() throws Exception {
 	
 		// the subsequent part of code is adapted from the 'prepare'
 		// method of WSS4J (1.6.4) WSSecEncrypt
-	    /*
-	     * If no external key (symmetricalKey) was set, generate an encryption
-	     * key (session key) for this Encrypt element. This key will be
-	     * encrypted using the public key of the receiver
-	     */
-	    if (this.ephemeralKey == null) {
 	        
-	    	if (this.symmetricKey == null) {           
-	    		KeyGenerator keyGen = getKeyGenerator();
-	            this.symmetricKey = keyGen.generateKey();            
-	    	} 
-	        
-	    	this.ephemeralKey = this.symmetricKey.getEncoded();
+		KeyGenerator keyGen = getKeyGenerator();
+		this.symmetricKey = keyGen.generateKey();            
 	    
-	    }
-	    
-	    // if (this.symmetricKey == null) this.symmetricKey = prepareSecretKey(this.symEncAlgo, this.ephemeralKey);
-	    
-	    /*
-	     * Get the certificate that contains the public key for the public key
-	     * algorithm that will encrypt the generated symmetric (session) key.
-	     */
-	    
-        prepareInternal(this.symmetricKey);
-
-	}
-
-	/*
-	 * Encrypt the symmetric key data and prepare the EncryptedKey element
-	 * This method does the most work for to prepare the EncryptedKey element.
-	 */
-
-	private void prepareInternal(SecretKey secretKey) throws Exception {
+		/*
+		 * Encrypt the symmetric key data and prepare the EncryptedKey element
+		 * This method does the most work for to prepare the EncryptedKey element.
+		 */
 		
 		Cipher cipher = getCipherInstance(this.keyEncAlgo);
 	    try {
@@ -203,28 +191,23 @@ public class SecEncryptor extends SecBase {
 	            cipher.init(Cipher.WRAP_MODE, this.crypto.getPublicKey(), oaepParameterSpec);
 
 	        }
-	    
+
+	        this.encryptedSymmetricKey = cipher.wrap(this.symmetricKey);
+
 	    } catch (InvalidKeyException e) {
 	        throw new Exception("Encryption failed: " + e.getMessage());
 	        
 	    } catch (InvalidAlgorithmParameterException e) {
 	        throw new Exception("Encryption failed: " + e.getMessage());
-
-	    }
-   
-	    try {
-	        this.encryptedEphemeralKey = cipher.wrap(secretKey);
 	    
-	    } catch (IllegalStateException ex) {
-	        throw new Exception("Encryption failed: " + ex.getMessage());
+	    } catch (IllegalStateException e) {
+	        throw new Exception("Encryption failed: " + e.getMessage());
 	        
-	    } catch (IllegalBlockSizeException ex) {
-	        throw new Exception("Encryption failed: " + ex.getMessage());
-	        
-	    } catch (InvalidKeyException ex) {
-	        throw new Exception("Encryption failed: " + ex.getMessage());
-	    }
+	    } catch (IllegalBlockSizeException e) {
+	        throw new Exception("Encryption failed: " + e.getMessage());
 
+	    }
+	    
 	    //
 	    // Now we need to setup the EncryptedKey header block 1) create a
 	    // EncryptedKey element and set a wsu:Id for it 2) Generate ds:KeyInfo
@@ -278,7 +261,7 @@ public class SecEncryptor extends SecBase {
 	     * </xenc:CipherData>
 	     */
 	    
-	    Text keyText = SecUtil.createBase64EncodedTextNode(this.xmlDoc, this.encryptedEphemeralKey);
+	    Text keyText = SecUtil.createBase64EncodedTextNode(this.xmlDoc, this.encryptedSymmetricKey);
     
 	    Element xencCipherValue = createCipherValue(this.encryptedKeyElement);
 	    xencCipherValue.appendChild(keyText);
@@ -311,8 +294,16 @@ public class SecEncryptor extends SecBase {
     
 	}
 
-    // Perform encryption on the SOAP envelope.
-
+	/**
+	 * This method encrypts a list of body elements (references)
+	 * of the SOAP message 
+	 * 
+	 * @param secretKey
+	 * @param encryptionAlgorithm
+	 * @param references
+	 * @return
+	 * @throws Exception
+	 */
 	public List<String> doEncryption(SecretKey secretKey, String encryptionAlgorithm, List<SecEncPart> references) throws Exception {
 
         XMLCipher xmlCipher = null;
@@ -353,55 +344,28 @@ public class SecEncryptor extends SecBase {
     
 	}
 
-    // Encrypt an element.
-
+	/**
+	 * This method encrypts a single DOM element.
+	 * 
+	 * @param elementToEncrypt
+	 * @param modifier
+	 * @param xmlCipher
+	 * @param secretKey
+	 * @return
+	 * @throws Exception
+	 */
 	private String encryptElement(Element elementToEncrypt, String modifier, XMLCipher xmlCipher, SecretKey secretKey) throws Exception {
 
         boolean content = "Content".equals(modifier) ? true : false;
+        if (content == false) {
+        	throw new Exception("[SecEncryptor] Encryption is actually restricted to content.");
+        }
 
         // Encrypt data, and set necessary attributes in xenc:EncryptedData
-
         String xencEncryptedDataId = SecUtil.getIdAllocator().createId("ED-", elementToEncrypt);
 
         try {
-            
-        	String headerId = "";
-            if ("Header".equals(modifier)) {
-            	
-            	// the modifier used with this encryption method is actually
-            	// restricted to "Content", i.e. this part of code is provided
-            	// for future usage.
-            	
-                Element elem = this.xmlDoc.createElementNS(SecConstants.WSSE11_NS, "wsse11:" + SecConstants.ENCRYPTED_HEADER);
-                SecUtil.setNamespace(elem, SecConstants.WSSE11_NS, SecConstants.WSSE11_PRE);
-                
-                String wsuPrefix = SecUtil.setNamespace(elem, SecConstants.WSU_NS, SecConstants.WSU_PRE);
-                
-                headerId = SecUtil.getIdAllocator().createId("EH-", elementToEncrypt);
-                elem.setAttributeNS(SecConstants.WSU_NS, wsuPrefix + ":Id", headerId);
-                
-                // Add the EncryptedHeader node to the element to be encrypted's parent
-                // (i.e. the SOAP header). Add the element to be encrypted to the Encrypted
-                // Header node as well
-
-                Node parent = elementToEncrypt.getParentNode();
-                
-                elementToEncrypt = (Element)parent.replaceChild(elem, elementToEncrypt);
-                elem.appendChild(elementToEncrypt);
-                
-                NamedNodeMap map = elementToEncrypt.getAttributes();
-                for (int i = 0; i < map.getLength(); i++) {
-                
-                	Attr attr = (Attr)map.item(i);
-                    if (attr.getNamespaceURI().equals(SecConstants.URI_SOAP11_ENV) || attr.getNamespaceURI().equals(SecConstants.URI_SOAP12_ENV)) {                         
-                        
-                    	String soapEnvPrefix = SecUtil.setNamespace(elem, attr.getNamespaceURI(), SecConstants.SOAP_PRE);
-                        elem.setAttributeNS(attr.getNamespaceURI(), soapEnvPrefix + ":" + attr.getLocalName(), attr.getValue());
-                    
-                    }
-                }
-            }
-            
+             
             // this is the DEFAULT way to encrypt the content,
             // i.e. the body of a SOAP message
             
@@ -462,6 +426,11 @@ public class SecEncryptor extends SecBase {
 		 */
 	    
 	    Element secToken = createSTR(this.xmlDoc);    
+	    
+	    // IMPORTANT: The wsse:Namespace MUST be set explicity
+	    // to ensure proper validation of signature
+	    SecUtil.setNamespace(secToken, SecConstants.WSSE_NS, SecConstants.WSSE_PRE);
+	    
 	    keyInfoElement.appendChild(secToken);
     
 	    this.encryptedKeyElement.appendChild(keyInfoElement);
@@ -531,42 +500,15 @@ public class SecEncryptor extends SecBase {
         return cipherValue;
     
     }
-
-    // Convert the raw key bytes into a SecretKey object of type symEncAlgo.
-    
-    /*
-	private static SecretKey prepareSecretKey(String symEncAlgo, byte[] rawKey) {
- 
-		// Do an additional check on the keysize required by the encryption algorithm
-        int size = 0;
-        try {
-            size = JCEMapper.getKeyLengthFromURI(symEncAlgo) / 8;
-        
-        } catch (Exception e) {
-            // ignore - some unknown (to JCEMapper) encryption algorithm
-
-        }
-        
-        String keyAlgorithm = JCEMapper.getJCEKeyAlgorithmFromURI(symEncAlgo);
-        SecretKeySpec keySpec;
-        
-        if (size > 0) {
-            keySpec = new SecretKeySpec(rawKey, 0, ((rawKey.length > size) ? size : rawKey.length), keyAlgorithm);
-        
-        } else {
-            keySpec = new SecretKeySpec(rawKey, keyAlgorithm);
-        }
-        
-        return (SecretKey)keySpec;
-    
-	}
-	*/
-    
-    /*
-     * Translate the "cipherAlgo" URI to a JCE ID, and return 
-     * a javax.crypto.Cipher instance of this type. 
-     */
 	
+    /**
+     * Translate the "cipherAlgo" URI to a JCE ID, and 
+     * return a javax.crypto.Cipher instance of this type. 
+     * 
+     * @param cipherAlgo
+     * @return
+     * @throws Exception
+     */
     public Cipher getCipherInstance(String cipherAlgo) throws Exception {
 
     	try {
