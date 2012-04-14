@@ -51,10 +51,10 @@ public class SecSignature extends SecBase {
 	 * 
 	 * @param credentialInfo
 	 */
-	public SecSignature(SecCredentialInfo credentialInfo) {
+	public SecSignature(SecCrypto sigCrypto) {
 		
-		this.certificate = credentialInfo.getCertificate();
-		this.privateKey = credentialInfo.getPrivateKey();
+		this.certificate = sigCrypto.getCertificate();
+		this.privateKey  = sigCrypto.getPrivateKey();
 		
 	}
 	

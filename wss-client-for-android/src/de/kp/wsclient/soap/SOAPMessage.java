@@ -14,7 +14,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import de.kp.wsclient.security.SecConstants;
-import de.kp.wsclient.security.SecCredentialInfo;
 import de.kp.wsclient.security.SecCrypto;
 import de.kp.wsclient.security.SecDecryptor;
 import de.kp.wsclient.security.SecEncryptor;
@@ -169,9 +168,9 @@ public class SOAPMessage {
 	
 	// this method supports the signing of the SOAP message
 	
-	public void sign(SecCredentialInfo credentialInfo) throws Exception {
+	public void sign(SecCrypto sigCrypto) throws Exception {
 		
-		SecSignature signature = new SecSignature(credentialInfo);
+		SecSignature signature = new SecSignature(sigCrypto);
 		this.xmlDoc = signature.sign(this.xmlDoc);
 		
 	}
@@ -180,14 +179,14 @@ public class SOAPMessage {
 	// of the SOAP message; note, that encryption
 	// MUST be invoked BEFORE signing is called
 	
-	public void encryptAndSign(SecCredentialInfo credentialInfo, SecCrypto crypto) throws Exception {
+	public void encryptAndSign(SecCrypto sigCrypto, SecCrypto encCrypto) throws Exception {
 
 		// encrypt
-		SecEncryptor encryptor = new SecEncryptor(crypto);
+		SecEncryptor encryptor = new SecEncryptor(encCrypto);
 		this.xmlDoc = encryptor.encrypt(this.xmlDoc);
 		
 		// sign
-		SecSignature signature = new SecSignature(credentialInfo);
+		SecSignature signature = new SecSignature(sigCrypto);
 		this.xmlDoc = signature.sign(this.xmlDoc);
 
 	}
