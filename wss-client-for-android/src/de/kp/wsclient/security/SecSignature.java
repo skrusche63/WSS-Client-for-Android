@@ -20,6 +20,18 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.Text;
 
+/**
+ * This class provides functionality to sign and
+ * verify SOAP message on the basis of binary
+ * security tokens (X509).
+ * 
+ * The private key is used to sign the SOAP message,
+ * the certificate is provided with the message and
+ * finally used to verify the signature.
+ * 
+ * @author Stefan Krusche (krusche@dr-kruscheundpartner.de)
+ *
+ */
 public class SecSignature extends SecBase {
 
 	private X509Certificate certificate;
@@ -32,6 +44,13 @@ public class SecSignature extends SecBase {
     	org.apache.xml.security.Init.init();
     }
 
+	/**
+	 * The constructor of SecSignature is invoked by
+	 * providing the user credentials; these must be
+	 * retrieved from a keystore in a prior step.
+	 * 
+	 * @param credentialInfo
+	 */
 	public SecSignature(SecCredentialInfo credentialInfo) {
 		
 		this.certificate = credentialInfo.getCertificate();
@@ -39,17 +58,29 @@ public class SecSignature extends SecBase {
 		
 	}
 	
+	/**
+	 * @param certificate
+	 */
 	public void setCertificate(X509Certificate certificate) {
 		this.certificate = certificate;
 	}
 	
+	/**
+	 * @param privateKey
+	 */
 	public void setPrivateKey(PrivateKey privateKey) {
 		this.privateKey = privateKey;
 	}
 	
-	// this method adds a signed wsse:Security element to
-	// a SOAP envelop document
 	
+	/**
+	 * this method adds a signed wsse:Security element to
+	 * a SOAP envelope document.
+	 * 
+	 * @param xmlDoc
+	 * @return
+	 * @throws Exception
+	 */
 	public Document sign(Document xmlDoc) throws Exception {
 		
 		// acquire SOAP header element
@@ -70,6 +101,11 @@ public class SecSignature extends SecBase {
 
 	}
 	
+	/**
+	 * @param xmlDoc
+	 * @return
+	 * @throws Exception
+	 */
 	private Element createWSSESecurity(Document xmlDoc) throws Exception {
 		
 		this.wsseSecurity = getSecHeader(xmlDoc);
@@ -101,6 +137,11 @@ public class SecSignature extends SecBase {
 	 * </wsse:BinarySecurityToken>
 	 */
 
+	/**
+	 * @param xmlDoc
+	 * @return
+	 * @throws Exception
+	 */
 	private Element createWSSEBinarySecurityToken(Document xmlDoc) throws Exception {
 
 		String qualifiedName = SecConstants.WSSE_PRE + ":" + SecConstants.BINARY_TOKEN_LN;
@@ -146,6 +187,14 @@ public class SecSignature extends SecBase {
 	 *	</ds:KeyInfo>
 	 * </ds:Signature>
 	 * 
+	 */
+	
+	/**
+	 * This method creates an instance of XMLSignature.
+	 * 
+	 * @param xmlDoc
+	 * @return
+	 * @throws Exception
 	 */
 	private XMLSignature createSignature(Document xmlDoc) throws Exception {
 
@@ -219,8 +268,12 @@ public class SecSignature extends SecBase {
 
 	}
 	
-	// determine signature algorithm from public key algorithm
-	
+	/**
+	 * This method determine signature algorithm from the 
+	 * public key algorithm.
+	 * 
+	 * @return Signature Algorithm
+	 */
 	private String getSignatureAlgorithm() {
 
 		if (this.certificate == null) return null;
@@ -240,6 +293,11 @@ public class SecSignature extends SecBase {
 
 	}
 
+    /**
+     * @param xmlDoc
+     * @return
+     * @throws Exception
+     */
     private Text createToken(Document xmlDoc) throws Exception {
         
     	if (this.certificate == null) throw new Exception("[Binary Security Token] Illegal certificate.");

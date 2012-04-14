@@ -33,6 +33,12 @@ public class SOAPMessenger {
 		initialized = true;
 	}
 	
+	/**
+	 * @param message
+	 * @param endpoint
+	 * @return
+	 * @throws Exception
+	 */
 	public SOAPMessage sendRequest(SOAPMessage message, String endpoint) throws Exception {
 
 		if (initialized == false)

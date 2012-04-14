@@ -22,26 +22,44 @@ public class SecCryptoParam {
 	}
 	
 	
+	/**
+	 * @return
+	 */
 	public int getResource() {
 		return resource;
 	}
 
+	/**
+	 * @param resource
+	 */
 	public void setResource(int resource) {
 		this.resource = resource;
 	}
 	
+	/**
+	 * @return
+	 */
 	public String getPassword() {
 		return password;
 	}
 	
+	/**
+	 * @param password
+	 */
 	public void setPassword(String password) {
 		this.password = password;
 	}
 	
+	/**
+	 * @return
+	 */
 	public String getType() {
 		return type;
 	}
 	
+	/**
+	 * @param type
+	 */
 	public void setType(String type) {
 		this.type = type;
 	}

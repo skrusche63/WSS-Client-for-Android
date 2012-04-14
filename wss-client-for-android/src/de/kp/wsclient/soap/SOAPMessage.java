@@ -70,6 +70,11 @@ public class SOAPMessage {
 	    
 	}
 
+	/**
+	 * Constructor SOAPMessage
+	 * 
+	 * @param xml
+	 */
 	public SOAPMessage(String xml) {
 		
 		InputStream is = getISFromXML(xml);
@@ -77,10 +82,20 @@ public class SOAPMessage {
 
 	}
 	
+	/**
+	 * Constructor SOAPMessage
+	 * 
+	 * @param is
+	 */
 	public SOAPMessage(InputStream is) {
 		setSOAPMessageFromIS(is);
 	}
 	
+	/**
+	 * Constructor SOAPMessage
+	 * 
+	 * @param xmlDoc
+	 */
 	public SOAPMessage(Document xmlDoc) {
 
 		this.xmlDoc = xmlDoc;
@@ -90,6 +105,9 @@ public class SOAPMessage {
 
 	}
     
+	/**
+	 * @param is
+	 */
 	private void setSOAPMessageFromIS(InputStream is) {
 
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();

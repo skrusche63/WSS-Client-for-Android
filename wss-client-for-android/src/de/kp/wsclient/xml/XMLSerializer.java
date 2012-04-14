@@ -15,9 +15,19 @@ import org.w3c.dom.Document;
 
 import de.kp.wsclient.util.StringOutputStream;
 
-
+/**
+ * This class supports the serialization of a certain
+ * W3C DOM document
+ * 
+ * @author Stefan Krusche (krusche@dr-kruscheundpartner.de)
+ *
+ */
 public class XMLSerializer {
 	
+	/**
+	 * @param xmlDoc
+	 * @return
+	 */
 	public static String serialize(Document xmlDoc)  {
 		
         String xml = null;

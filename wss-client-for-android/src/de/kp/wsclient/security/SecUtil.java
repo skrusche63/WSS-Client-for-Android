@@ -60,6 +60,10 @@ public class SecUtil {
         return idAllocator;
     }
 
+    /**
+     * @param startElement
+     * @return
+     */
     public static SOAPConstants getSOAPConstants(Element startElement) {
 
     	Document doc = startElement.getOwnerDocument();
@@ -73,16 +77,30 @@ public class SecUtil {
     
     }
 
-    // create a base64 test node <p/>
-
+    /**
+     * This method create a base64 test node.
+     * 
+     * @param doc
+     * @param data
+     * @return
+     */
     public static Text createBase64EncodedTextNode(Document doc, byte data[]) {
         return doc.createTextNode(Base64.encode(data));
     }
    
+    /**
+     * @param startElement
+     * @return
+     */
     public static String getSOAPNamespace(Element startElement) {
         return getSOAPConstants(startElement).getEnvelopeURI();
     }
 
+    /**
+     * @param parent
+     * @param child
+     * @return
+     */
     public static Element prependChildElement(Element parent, Element child) {
         
     	Node firstChild = parent.getFirstChild();
@@ -95,11 +113,14 @@ public class SecUtil {
         }
     }
 
-    /*
+    /**
      * Generate a (SHA1) digest of the input bytes. The MessageDigest 
      * instance that backs this method is cached for efficiency.  
+     * 
+     * @param inputBytes
+     * @return
+     * @throws Exception
      */
-
     public static synchronized byte[] generateDigest(byte[] inputBytes) throws Exception {
         
     	try {
@@ -113,14 +134,18 @@ public class SecUtil {
         }
     }
 
-    /*
+    /**
      * Set a namespace/prefix on an element if it is not set already. 
      * First off, it searches for the element for the prefix associated 
      * with the specified namespace. If the prefix isn't null, then this 
      * is returned. Otherwise, it creates a new attribute using the 
      * namespace/prefix passed as parameters.
+     * 
+     * @param element
+     * @param namespace
+     * @param prefix
+     * @return
      */
-
     public static String setNamespace(Element element, String namespace, String prefix) {
     
     	String pre = getPrefixNS(namespace, element);
@@ -133,8 +158,12 @@ public class SecUtil {
     
     }
 
-    // The following methods were copied over from axis.utils.XMLUtils and adapted
-
+    /**
+     * 
+     * @param uri
+     * @param e
+     * @return
+     */
     public static String getPrefixNS(String uri, Node e) {
 
     	while (e != null && (e.getNodeType() == Element.ELEMENT_NODE)) {
@@ -156,9 +185,13 @@ public class SecUtil {
     	}
         return null;
     }
-
-    // return the first soap "Body" element.
-    
+   
+    /**
+     * This method returns the first soap "Body" element.
+     * 
+     * @param doc
+     * @return
+     */
     public static Element findBodyElement(Document doc) {
     
     	//

@@ -1,6 +1,6 @@
 package de.kp.wsclient.soap;
 
-/*
+/**
  * This interface is an adapted version of the SOAPRequestor interface
  * from the icesoap project from Alex Gillerian
  */

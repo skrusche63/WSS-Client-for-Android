@@ -9,21 +9,43 @@ import de.kp.wsclient.security.SecCredentialInfo;
 import de.kp.wsclient.security.SecCrypto;
 import de.kp.wsclient.security.SecCryptoParams;
 
+/**
+ * This is a utility class to support secure SOAP communications
+ * for android platforms. This is usually done, following these
+ * steps
+ * 
+ * (1) Create SOAP message
+ * (2) Secure SOAP message
+ * (3) Send SOAP Message
+ * (4) Validate SOAP Message (response)
+ * 
+ * @author Stefan Krusche (krusche@dr-kruscheundpartner.de)
+ *
+ */
 public class SOAPUtil {
 
 	public static SOAPMessage createSOAPMessage() {
 		return new SOAPMessage();		
 	}
 
+	/**
+	 * This method supports signing, and encrypting & signing of
+	 * a certain SOAP message;
+	 * 
+	 * @param message SOAP message to be secured
+	 * @param params Configuration parameters to enable encryption / signature
+	 * @param credentials User Credentials used to sign a SOAP message
+	 * @param crypto Crypto Data used to encrypt a SOAP Message
+	 * @return
+	 * @throws Exception
+	 */
 	public static SOAPMessage secureSOAPMessage(SOAPMessage message, HashMap<String,String> params, SecCredentialInfo credentials, SecCrypto crypto) throws Exception {
 		
 		if (params.containsKey(SecConstants.REQ_SIGN) && params.get(SecConstants.REQ_SIGN).equals("yes")) {
-			// security is restricted to message integrity 
 			if (credentials == null) throw new Exception("[SOAPMessenger] No credential information provided.");
 			message.sign(credentials);
 			
 		} else if (params.containsKey(SecConstants.REQ_ENCRYPT_SIGN) && params.get(SecConstants.REQ_ENCRYPT_SIGN).equals("yes")) {
-			// security comprises message integrity & confidentiality
 			if ((credentials == null) || (crypto == null)) throw new Exception("[SOAPMessenger] No credential or crypto information provided.");
 			message.encryptAndSign(credentials, crypto);
 		}
@@ -31,14 +53,19 @@ public class SOAPUtil {
 		return message;
 	}
 	
+	/**
+	 * @param message
+	 * @param params
+	 * @param crypto
+	 * @return
+	 * @throws Exception
+	 */
 	public static SOAPMessage validateSOAPMessage(SOAPMessage message, HashMap<String,String> params, SecCrypto crypto) throws Exception {
 		
 		if (params.containsKey(SecConstants.RES_VERIFY) && params.get(SecConstants.RES_VERIFY).equals("yes")) {
-			// verify signature of incomig SOAP response message
 			message.verify();
 			
 		} else if (params.containsKey(SecConstants.RES_DECRYPT_VERIFY) && params.get(SecConstants.RES_DECRYPT_VERIFY).equals("yes")) {
-			// verify and decrypt incoming SOAP response message
 			if (crypto == null) throw new Exception("[SOAPMessenger] No crypto information provided.");
 			message.verifyAndDecrypt(crypto);
 
@@ -47,6 +74,14 @@ public class SOAPUtil {
 		return message;
 	}
 	
+	/**
+	 * @param context
+	 * @param message
+	 * @param endpoint
+	 * @param cryptoParams
+	 * @return
+	 * @throws Exception
+	 */
 	public static SOAPMessage sendSOAPMessage(Context context, SOAPMessage message, String endpoint, SecCryptoParams cryptoParams) throws Exception {
 		
 		SOAPMessenger messenger = SOAPMessenger.getInstance();
