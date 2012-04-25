@@ -21,6 +21,7 @@ import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 
 import android.content.Context;
+import de.kp.wsclient.security.SecConstants;
 import de.kp.wsclient.security.SecCryptoParam;
 import de.kp.wsclient.security.SecCryptoParams;
 
@@ -148,30 +149,87 @@ public class SOAPSenderImpl implements SOAPSender {
 		
 	}
 
+	/**
+	 * This method distinguishes between PKCS11 und PKCS12 compliant
+	 * keystores; for PKCS12 keystores, the respective type MUST be
+	 * set to BKS (Bouncycastle)
+	 * 
+	 * @throws Exception
+	 */
 	protected void loadKeyStore() throws Exception {
 
-		InputStream keyStoreStream = context.getResources().openRawResource(keyStoreParam.getResource());
-		keyStore = KeyStore.getInstance(keyStoreParam.getType());
-
-		try {
-			keyStore.load(keyStoreStream, keyStoreParam.getPassword().toCharArray());
+		String keyStoreType = keyStoreParam.getType();
+		char[] keyStorePass = keyStoreParam.getPassword().toCharArray();
 		
-		} finally {
-			keyStoreStream.close();
+		if (keyStoreType.equals(SecConstants.KS_TYPE_BKS)) {
+			
+			// the keystore refers to PKCS12 soft token
+			keyStore = KeyStore.getInstance(keyStoreType);
+			InputStream keyStoreStream = null;
+			
+			try {
+				
+				keyStoreStream = context.getResources().openRawResource(keyStoreParam.getResource());
+				keyStore.load(keyStoreStream, keyStorePass);
+			
+			} finally {
+				if (keyStoreStream != null) keyStoreStream.close();
+				
+			}
+			
+		} else if (keyStoreType.equals(SecConstants.KS_TYPE_PKCS11)) {
+
+			// the keystore refers to a smartcard token (hard token)
+			keyStore = KeyStore.getInstance(keyStoreType);
+			keyStore.load(null, keyStorePass);
+			
+		} else {
+			
+			// the keystore type refers to an unknown format
+			throw new Exception("[SOAPSenderImpl] " + keyStoreType + " is not supported.");
+			
 		}
 
 	}
 
+	/**
+	 * This method distinguishes between PKCS11 und PKCS12 compliant
+	 * keystores; for PKCS12 keystores, the respective type MUST be
+	 * set to BKS (Bouncycastle)
+	 * 
+	 * @throws Exception
+	 */
 	protected void loadTrustStore() throws Exception {
 
-		InputStream trustStoreStream = context.getResources().openRawResource(trustStoreParam.getResource());
-		trustStore = KeyStore.getInstance(trustStoreParam.getType());
+		String trustStoreType = trustStoreParam.getType();
+		char[] trustStorePass = trustStoreParam.getPassword().toCharArray();
+		
+		if (trustStoreType.equals(SecConstants.KS_TYPE_BKS)) {
 
-		try {
-			trustStore.load(trustStoreStream, trustStoreParam.getPassword().toCharArray());
+			// the truststore refers to PKCS12 soft token
+			trustStore = KeyStore.getInstance(trustStoreType);
+			InputStream trustStoreStream = null;
 
-		} finally {
-			trustStoreStream.close();
+			try {
+
+				trustStoreStream = context.getResources().openRawResource(trustStoreParam.getResource());
+				trustStore.load(trustStoreStream, trustStorePass);
+
+			} finally {
+				if (trustStoreStream != null) trustStoreStream.close();
+			}
+			
+		} else if (trustStoreType.equals(SecConstants.KS_TYPE_PKCS11)) {
+
+			// the keystore refers to a smartcard token (hard token)
+			trustStore = KeyStore.getInstance(trustStoreType);
+			trustStore.load(null, trustStorePass);
+			
+		} else {
+			
+			// the truststore type refers to an unknown format
+			throw new Exception("[SOAPSenderImpl] " + trustStoreType + " is not supported.");
+			
 		}
 
 	}
@@ -225,10 +283,10 @@ public class SOAPSenderImpl implements SOAPSender {
 	 * @throws Exception 
 	 */
 	private SSLSocketFactory CertClientSslSocketFactory() throws Exception {
+		
 		/*
 		 Pass the keystore to the SSLSocketFactory. The factory is
-		 responsible
-		 for the verification of the server certificate.
+		 responsible for the verification of the server certificate.
 		 */
 	
 		if ((keyStore == null) || (trustStore == null))

@@ -13,7 +13,8 @@ public class SecCryptoParam {
 	private int resource;
 	private String password;
 	
-	private String type = "BKS";
+	// the default keystore is a BouncyCastle keystore
+	private String type = SecConstants.KS_TYPE_BKS;
 	
 	public SecCryptoParam(int resource, String password) {
 

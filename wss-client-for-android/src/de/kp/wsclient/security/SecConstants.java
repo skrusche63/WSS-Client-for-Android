@@ -110,4 +110,11 @@ public class SecConstants {
     public static final int CUSTOM_KEY_IDENTIFIER 		  = 12;
     public static final int KEY_VALUE 					  = 13;
 
+    /*
+     * KEYSTORE FORMAT
+     */
+    
+    public static String KS_TYPE_BKS    = "BKS";
+    public static String KS_TYPE_PKCS11 = "PKCS11";
+    
 }
