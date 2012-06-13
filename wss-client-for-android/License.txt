@@ -1,0 +1,4 @@
+The project is licensed under the GNU Public License Version 3 or later for personal use. 
+For enterprise or governmental use a set of attractive commercial licenses are available.
+
+For commercial licenses please contact team@dr-kruscheundpartner.de
