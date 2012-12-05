@@ -38,6 +38,8 @@ import de.kp.wsclient.security.SecCryptoParams;
  * 
  */
 
+// TODO: Remove test configuration
+
 public class SOAPSenderImpl implements SOAPSender {
 
 	/** Soap action to use if none is specified. */
@@ -47,7 +49,9 @@ public class SOAPSenderImpl implements SOAPSender {
 	private static final int DEFAULT_HTTPS_PORT = 443;
 
 	/** Port for HTTP communication */
-	private static final int DEFAULT_HTTP_PORT = 80;
+
+	// __TEST__
+	private static final int DEFAULT_HTTP_PORT = 8080; //80;
 
 	/** Name of HTTPS */
 	private static final String HTTPS_NAME = "https";
@@ -140,7 +144,11 @@ public class SOAPSenderImpl implements SOAPSender {
 	 */
 	public void init(SecCryptoParams cryptoParams) throws Exception {
 		
-		// the key- and truststore params are registered for later use
+		if (cryptoParams == null) return;
+		
+		/* 
+		 * The key- and truststore params are registered for later use
+		 */
 		keyStoreParam   = cryptoParams.get(SecCryptoParams.KEYSTORE);
 		trustStoreParam = cryptoParams.get(SecCryptoParams.TRUSTSTORE);
 		
@@ -270,7 +278,9 @@ public class SOAPSenderImpl implements SOAPSender {
 		SchemeRegistry schemeRegistry = new SchemeRegistry();
 
 		schemeRegistry.register(new Scheme(HTTP_NAME, PlainSocketFactory.getSocketFactory(), DEFAULT_HTTP_PORT));
-		schemeRegistry.register(new Scheme(HTTPS_NAME, CertClientSslSocketFactory(), DEFAULT_HTTPS_PORT));
+
+		// __TEST__
+		//schemeRegistry.register(new Scheme(HTTPS_NAME, CertClientSslSocketFactory(), DEFAULT_HTTPS_PORT));
 
 		return schemeRegistry;
 

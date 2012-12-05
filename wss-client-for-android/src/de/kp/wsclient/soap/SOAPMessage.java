@@ -34,6 +34,9 @@ public class SOAPMessage {
 	// this constructor is used to build a new SOAP message;
 	// use case: outgoing SOAP message
 	
+	//private static String SOAP_NS = SecConstants.URI_SOAP12_ENV;
+	private static String SOAP_NS = SecConstants.URI_SOAP11_ENV;
+	
 	public SOAPMessage() {
 		
 	    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -45,19 +48,19 @@ public class SOAPMessage {
 	    		    	
 	    	// create SOAP envelope
 	    	String envelopeName = SecConstants.SOAP_PRE + ":" + SecConstants.ELEM_ENVELOPE;
-	    	Element envelope = xmlDoc.createElementNS(SecConstants.URI_SOAP12_ENV, envelopeName);
+	    	Element envelope = xmlDoc.createElementNS(SOAP_NS, envelopeName);
 	    	
 	    	xmlDoc.appendChild(envelope);
 
 	    	// create SOAP header
 	    	String headerName = SecConstants.SOAP_PRE + ":" + SecConstants.ELEM_HEADER;
-	    	header = xmlDoc.createElementNS(SecConstants.URI_SOAP12_ENV, headerName);
+	    	header = xmlDoc.createElementNS(SOAP_NS, headerName);
 	    	
 	    	envelope.appendChild(header);
 	    	
 	    	// create SOAP body
 	    	String bodyName = SecConstants.SOAP_PRE + ":" + SecConstants.ELEM_BODY;
-	    	body = xmlDoc.createElementNS(SecConstants.URI_SOAP12_ENV, bodyName);
+	    	body = xmlDoc.createElementNS(SOAP_NS, bodyName);
 	    	
 	    	body.setAttribute("id", bodyId);
 	    	
@@ -135,7 +138,7 @@ public class SOAPMessage {
 	
 	private Element getSOAPElement(Document xmlDoc, String localName) {
 
-	    NodeList nodes = xmlDoc.getElementsByTagNameNS(SecConstants.URI_SOAP12_ENV, localName);
+	    NodeList nodes = xmlDoc.getElementsByTagNameNS(SOAP_NS, localName);
 	    if (nodes.getLength() == 0) return null;
 
         return (Element) nodes.item(0);

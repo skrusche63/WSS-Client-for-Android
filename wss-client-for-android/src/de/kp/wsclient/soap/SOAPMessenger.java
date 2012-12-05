@@ -1,5 +1,6 @@
 package de.kp.wsclient.soap;
 
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 
 import android.content.Context;
@@ -56,7 +57,6 @@ public class SOAPMessenger {
 			if (data == null) throw new Exception("No response data retrieved.");
 			
 			responseMessage = new SOAPMessage(data);
-
 			
 		}
 		
