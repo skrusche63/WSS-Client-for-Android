@@ -30,6 +30,34 @@ Web Service Security secures data and ensures integrity. It guarantees end-to-en
 
 **SOAP Messenger** is a key component to access SOAP based web services from tablets and smartphones. With this component, mobile devices are enabled to seamlessly integrate with Software as a Service. The SOAP messenger module provides the basis for a secure message exchange, and, combined with WSS overcomes the well-known security issues on the transport level.
 
+The class ```SOAPMessenger```is the starting point to either understand the functionality of WSS-Client for Android or directly integrate into the specific application logic.
+
+```
+public SOAPMessage sendRequest(SOAPMessage message, String endpoint) throws Exception {
+
+  if (initialized == false)
+    throw new Exception("[SOAPMessenger] Is not initialized");
+ 
+  SOAPMessage responseMessage = null;
+			
+  // send SOAP message to web service identified by its url
+  SOAPResponse soapResponse = this.soapSender.doSoapRequest(message, endpoint);
+		
+  int httpStatus = soapResponse.getHttpStatus();
+  if (httpStatus == 200) {
+		
+    InputStream data = soapResponse.getData();
+    if (data == null) throw new Exception("No response data retrieved.");
+			
+    responseMessage = new SOAPMessage(data);
+			
+  }
+		
+  return responseMessage;
+
+}
+```
+
 ---
 
 ### PKCS#11
