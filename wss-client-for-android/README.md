@@ -1,9 +1,14 @@
-![Dr.Krusche & Partner PartG](https://raw.github.com/skrusche63/shopify-insight/master/images/dr_kruscheundpartner_640.png)
+![Dr.Krusche & Partner PartG](https://raw.github.com/skrusche63/wss-client-for-android/master/images/dr_kruscheundpartner_640.png)
 
 ## Web Service Security for Android
 
 This project brings the SOAP protocol (Simple Object Access Protocol) and Web Service Security (WSS) Android platforms. WSS-Client for Android
 makes it possible to securely access web services from the mobile sector.
+
+The image below describes WSS-Client for Android in the context of e.g. an e-commerce environment. 
+
+![WSS-Client for Android Overview](https://raw.github.com/skrusche63/wss-client-for-android/master/images/wss_client_overview_640.png)
+
 
 ### Web Service Security
 
