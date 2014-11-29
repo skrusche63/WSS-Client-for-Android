@@ -17,16 +17,18 @@ available for tablets and smartphones.
 ensures information integrity and protects against falsification. A digital signature may also be used to uniquely determine the digital identity of a certain user, which is a 
 trustworthy basis for further access control mechanisms.
             
-**XML Encryption** is a specification that is governed by a W3C recommendation and defines how to encryt the content of an XML element. An XML element in this context 
-is either an XML message as a whole or selected parts of a message. This makes it even more flexible to adequately respond to the security needs of enterprise data.            
+**XML Encryption** is a specification that is governed by a W3C recommendation and defines how to encryt the content of an XML element. An XML element in this context is either an XML message as a whole or selected parts of a message. This makes it even more flexible to adequately respond to the security needs of enterprise data.            
+
+Web Service Security secures data and ensures integrity. It guarantees end-to-end security and is independent of the security mechanism provided by the transport layer. It is a must for a secure shopping experience.
+
+![Message Layer Security](https://raw.githubusercontent.com/skrusche63/WSS-Client-for-Android/master/wss-client-for-android/images/message_security_640.png)
+
 
 ---
 
 ### SOAP Messenger
 
-**SOAP Messenger** is a key component to access SOAP based web services from tablets and smartphones. With this component, mobile devices are enabled to seamlessly 
-integrate with Software as a Service. The SOAP messenger module provides the basis for a secure message exchange, and, combined with WSS overcomes the well-known 
-security issues on the transport level.
+**SOAP Messenger** is a key component to access SOAP based web services from tablets and smartphones. With this component, mobile devices are enabled to seamlessly integrate with Software as a Service. The SOAP messenger module provides the basis for a secure message exchange, and, combined with WSS overcomes the well-known security issues on the transport level.
 
 ---
 
