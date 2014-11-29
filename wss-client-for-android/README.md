@@ -1,4 +1,4 @@
-![Dr.Krusche & Partner PartG](https://raw.github.com/skrusche63/wss-client-for-android/master/images/dr_kruscheundpartner_640.png)
+![Dr.Krusche & Partner PartG](https://raw.githubusercontent.com/skrusche63/WSS-Client-for-Android/master/wss-client-for-android/images/dr_kruscheundpartner_640.png)
 
 ## Web Service Security for Android
 
