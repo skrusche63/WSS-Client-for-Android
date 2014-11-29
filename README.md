@@ -2,8 +2,11 @@
 
 ## Web Service Security for Android
 
-This project brings the SOAP protocol (Simple Object Access Protocol) and Web Service Security (WSS) Android platforms. WSS-Client for Android
-makes it possible to securely access web services from the mobile sector.
+This project brings the SOAP protocol (Simple Object Access Protocol) and Web Service Security (WSS) Android platforms. WSS-Client for Android makes it possible to securely access web services from the mobile sector.
+
+The image below describes WSS-Client for Android in the context of e.g. an e-commerce environment. 
+
+![WSS-Client for Android Overview](https://raw.githubusercontent.com/skrusche63/WSS-Client-for-Android/master/wss-client-for-android/images/wss_client_overview_640.png)
 
 ### Web Service Security
 
